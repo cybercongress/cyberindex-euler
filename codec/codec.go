@@ -2,7 +2,7 @@ package codec
 
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/simapp"
+	app "github.com/cybercongress/cyberd/app"
 )
 
 // Codec is the application-wide Amino codec and is initialized upon package
@@ -10,6 +10,7 @@ import (
 var Codec *codec.Codec
 
 func init() {
-	Codec = simapp.MakeCodec()
+	Codec = app.MakeCodec()
+	app.SetPrefix()
 	Codec.Seal()
 }

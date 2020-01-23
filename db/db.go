@@ -3,10 +3,12 @@ package db
 import (
 	"database/sql"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 
 	junocdc "github.com/fissionlabsio/juno/codec"
 	"github.com/fissionlabsio/juno/config"
+	"github.com/cybercongress/cyberd/x/link"
 	_ "github.com/lib/pq" // nolint
 	"github.com/rs/zerolog/log"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -191,6 +193,49 @@ func (db *Database) SetTx(tx sdk.TxResponse) (uint64, error) {
 		tx.Timestamp, tx.GasWanted, tx.GasUsed, tx.Height, tx.TxHash, string(eventsBz),
 		string(msgsBz), string(feeBz), string(sigsBz), stdTx.GetMemo(),
 	).Scan(&id)
+
+	// ___________________________________
+
+	type msg struct {
+		Type string
+		Value link.Msg
+	}
+	var Msgs []msg;
+
+	json.Unmarshal([]byte(msgsBz), &Msgs)
+
+	for _, ms := range Msgs {
+		if ms.Type == "cyberd/Link" {
+			_, _ = db.SetLinks(ms.Value, tx)
+		}
+	}
+
+	// ___________________________________
+
+	return id, err
+}
+
+func (db *Database) SetLinks(msg link.Msg, tx sdk.TxResponse) (uint64, error) {
+	var id uint64
+
+	sqlStatement := `
+	INSERT INTO link (cid_from, cid_to, agent, timestamp, height, transaction)
+	VALUES ($1, $2, $3, $4, $5, $6)
+	RETURNING id;
+	`
+
+	var link = msg.Links[0]
+	//fmt.Println("\n Link: ", link)
+	//for _, link := range msg.Links {
+	err := db.QueryRow(
+		sqlStatement,
+		link.From, link.To, msg.Address.String(), tx.Timestamp, tx.Height, tx.TxHash,
+	).Scan(&id)
+	//}
+	//fmt.Println("\n Written link: ", id)
+	//if err != nil {
+	//	fmt.Println("\n Failed to wrote link: ", err)
+	//}
 
 	return id, err
 }

@@ -29,7 +29,7 @@ endif
 
 install: go.sum
 	@echo "installing juno binary..."
-	@go install -mod=readonly $(BUILD_FLAGS) .
+	@go install $(BUILD_FLAGS) .
 
 ###############################################################################
 # Tools
