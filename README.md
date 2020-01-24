@@ -95,3 +95,9 @@ Contributions are welcome! Please open an Issues or Pull Request for any changes
 ## License
 
 [CCC0 1.0 Universal](https://creativecommons.org/share-your-work/public-domain/cc0/)
+
+## Running in docker
+
+- Open and fill `.env` file with all necessary data
+- Open and fill congig.toml with all necessary data
+- Run `run.sh`
