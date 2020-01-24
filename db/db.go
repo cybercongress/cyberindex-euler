@@ -194,28 +194,39 @@ func (db *Database) SetTx(tx sdk.TxResponse) (uint64, error) {
 		string(msgsBz), string(feeBz), string(sigsBz), stdTx.GetMemo(),
 	).Scan(&id)
 
-	// ___________________________________
 
-	type msg struct {
-		Type string
-		Value link.Msg
+	if err := db.ExportParsedTx(tx, msgsBz); err != nil {
+		return 0, err
 	}
-	var Msgs []msg;
-
-	json.Unmarshal([]byte(msgsBz), &Msgs)
-
-	for _, ms := range Msgs {
-		if ms.Type == "cyberd/Link" {
-			_, _ = db.SetLinks(ms.Value, tx)
-		}
-	}
-
-	// ___________________________________
 
 	return id, err
 }
 
-func (db *Database) SetLinks(msg link.Msg, tx sdk.TxResponse) (uint64, error) {
+type LinkMsg struct {
+	Type  string
+	Value link.Msg
+}
+
+func (db *Database) ExportParsedTx(tx sdk.TxResponse, msgsBz []byte) error {
+
+	var Msgs []LinkMsg;
+	json.Unmarshal([]byte(msgsBz), &Msgs)
+
+	for _, msg := range Msgs {
+		if msg.Type == "cyberd/Link" {
+			for _, link := range msg.Value.Links {
+				_, err := db.SetLink(link, msg.Value.Address, tx); if err != nil {
+					log.Error().Err(err).Str("hash", tx.TxHash).Msg("failed to write cyberlink")
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func (db *Database) SetLink(link link.Link, address sdk.AccAddress, tx sdk.TxResponse) (uint64, error) {
 	var id uint64
 
 	sqlStatement := `
@@ -224,18 +235,10 @@ func (db *Database) SetLinks(msg link.Msg, tx sdk.TxResponse) (uint64, error) {
 	RETURNING id;
 	`
 
-	var link = msg.Links[0]
-	//fmt.Println("\n Link: ", link)
-	//for _, link := range msg.Links {
 	err := db.QueryRow(
 		sqlStatement,
-		link.From, link.To, msg.Address.String(), tx.Timestamp, tx.Height, tx.TxHash,
+		link.From, link.To, address.String(), tx.Timestamp, tx.Height, tx.TxHash,
 	).Scan(&id)
-	//}
-	//fmt.Println("\n Written link: ", id)
-	//if err != nil {
-	//	fmt.Println("\n Failed to wrote link: ", err)
-	//}
 
 	return id, err
 }
