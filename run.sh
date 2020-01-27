@@ -18,7 +18,7 @@ docker exec -ti cyberindex_postgres psql -f /root/schema/link.sql -d $POSTGRES_D
 docker exec -ti cyberindex_postgres psql -f /root/schema/transaction.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
 docker exec -ti cyberindex_postgres psql -f /root/schema/link.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
 #create config.toml, put values from .env file to config.toml
-cat config.sample.toml >> config.toml
+cat config.sample >> config.toml
 sed -i "/#1/a rpc_node=\"$RPC_URL\"" config.toml
 sed -i "/rpc/a client_node=\"$LCD_URL\"" config.toml
 sed -i "/port/a name=\"$POSTGRES_DB_NAME\"" config.toml

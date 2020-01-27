@@ -1,0 +1,8 @@
+
+#1 endpoint details
+
+#2 database details
+[database]
+host = "localhost"
+port = 5432
+ssl_mode = "disable"
