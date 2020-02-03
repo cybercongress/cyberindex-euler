@@ -11,7 +11,7 @@ docker exec -ti cyberindex_postgres psql -f /root/schema/validator.sql -d $POSTG
 docker exec -ti cyberindex_postgres psql -f /root/schema/pre_commit.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
 docker exec -ti cyberindex_postgres psql -f /root/schema/block.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
 docker exec -ti cyberindex_postgres psql -f /root/schema/transaction.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
-docker exec -ti cyberindex_postgres psql -f /root/schema/link.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
+docker exec -ti cyberindex_postgres psql -f /root/schema/cyberlink.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
 
 # create config.toml, put values from .env file to config.toml
 echo -n 'rpc_node="' >> config.toml && echo -n $RPC_URL >> config.toml && echo -n '"' >> config.toml

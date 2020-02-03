@@ -230,7 +230,7 @@ func (db *Database) SetLink(link link.Link, address sdk.AccAddress, tx sdk.TxRes
 	var id uint64
 
 	sqlStatement := `
-	INSERT INTO link (cid_from, cid_to, agent, timestamp, height, transaction)
+	INSERT INTO cyberlink (object_from, object_to, subject, timestamp, height, txhash)
 	VALUES ($1, $2, $3, $4, $5, $6)
 	RETURNING id;
 	`
