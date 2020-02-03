@@ -54,6 +54,32 @@ To install the binary run `make install`.
 
 **Note**: Requires [Go 1.13+](https://golang.org/dl/)
 
+## Running in docker
+
+- Open and fill `.env` file with all necessary data
+- To install in docker run `make docker`.
+
+Cyberindex, Hasura and Postgres would be deployed in docker containers.
+
+**Note** Not necessary to create `config.toml` for docker installation, it would be generated automatically from `.env` file.
+
+Example of filled `.env` file:
+
+```bash
+POSTGRES_DB_FOLDER=./postgres
+POSTGRES_DB_HOST=localhost
+POSTGRES_DB_PORT=5432
+POSTGRES_DB_NAME=cyberindex
+POSTGRES_USER_NAME=cyber
+POSTGRES_DB_PASSWORD=postgres111
+HASURA_PORT=8090
+HASURA_ADMIN_SECRET=hasura111
+JUNO_SSL_MODE=disable
+JUNO_WORKERS=6
+RPC_URL=http://localhost:26657
+LCD_URL=http://localhost:1317
+```
+
 ## Usage
 
 Juno internally runs a single worker that consumes from a single queue. The
