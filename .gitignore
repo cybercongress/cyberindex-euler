@@ -15,3 +15,6 @@ tools-stamp
 
 # configuration
 *.toml
+
+# python
+__pycache__
