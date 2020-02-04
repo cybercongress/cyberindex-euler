@@ -7,7 +7,7 @@ def get_block_relevance():
 
 def save_block_relevance(cursor, block, cids):
     cursor.executemany("""
-        INSERT INTO relevance (cid, block, rank) 
+        INSERT INTO relevance (object, height, rank) 
         VALUES (%s, %s, %s)
 
         ON CONFLICT DO NOTHING;

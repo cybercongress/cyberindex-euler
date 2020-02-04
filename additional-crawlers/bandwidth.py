@@ -8,7 +8,7 @@ def get_bandwidth_price():
 
 def save_bandwidth_price(cursor, block, price):
     cursor.execute("""
-        INSERT INTO bandwidth_price (block, price) 
+        INSERT INTO bandwidth_price (height, price) 
         VALUES (%s, %s)
 
         ON CONFLICT DO NOTHING;

@@ -1,28 +1,28 @@
 CREATE VIEW linkage_view AS (
-    SELECT cid, agent, MIN(height) AS height, MIN(timestamp) AS timestamp
+    SELECT object, subject, MIN(height) AS height, MIN(timestamp) AS timestamp
     FROM (
-        SELECT object_to AS cid, subject AS agent, MIN(height) AS height, MIN(timestamp) AS timestamp
+        SELECT object_to AS object, subject, MIN(height) AS height, MIN(timestamp) AS timestamp
         FROM cyberlink
         GROUP BY object_to, subject
         
         UNION
         
-        SELECT object_from AS cid, subject AS agent, MIN(height) AS height, MIN(timestamp) AS timestamp
+        SELECT object_from AS object, subject, MIN(height) AS height, MIN(timestamp) AS timestamp
         FROM cyberlink
         GROUP BY object_from, subject
     ) AS merged_linkage
-    GROUP BY cid, agent
-)
+    GROUP BY object, subject
+);
 
 CREATE VIEW rewards_view AS (
-    WITH top_cids AS (
-        SELECT cid, block, rank
+    WITH top_objects AS (
+        SELECT object, height, rank
         FROM relevance
-    ), B_linked_agents AS (
+    ), linked_subjects AS (
         SELECT * 
         FROM (
-            SELECT agent, height AS block, cid, RANK () OVER ( 
-              PARTITION BY cid
+            SELECT subject, height, object, RANK () OVER ( 
+              PARTITION BY object
               ORDER BY timestamp
             ) order_number
             FROM linkage_view
@@ -30,22 +30,22 @@ CREATE VIEW rewards_view AS (
         WHERE order_number <= 10
     )
     SELECT 
-        B_linked_agents.agent, 
-        top_cids.cid, 
-        top_cids.block AS block, 
-        B_linked_agents.block AS test_block,
-        top_cids.rank, 
-        B_linked_agents.order_number
-    FROM top_cids, B_linked_agents
-    WHERE top_cids.cid = B_linked_agents.cid
-    AND B_linked_agents.block <= top_cids.block
-)
+        linked_subjects.subject, 
+        top_objects.object, 
+        top_objects.height AS block, 
+        linked_subjects.height AS test_block,
+        top_objects.rank, 
+        linked_subjects.order_number
+    FROM top_objects, linked_subjects
+    WHERE top_objects.object = linked_subjects.object
+    AND linked_subjects.height <= top_objects.height
+);
 
 
 CREATE VIEW linkages_view AS (
-    SELECT linkage_view.cid, block, count(*) AS linkages
+    SELECT linkage_view.object, relevance.height, count(*) AS linkages
     FROM linkage_view, relevance
-    WHERE linkage_view.cid = relevance.cid
-    AND linkage_view.height <= relevance.block
-    GROUP BY linkage_view.cid, block
+    WHERE linkage_view.object = relevance.object
+    AND linkage_view.height <= relevance.height
+    GROUP BY linkage_view.object, relevance.height
 )
