@@ -1,5 +1,6 @@
 import websockets
 import json
+from config import *
 
 async def init(websocket):
     json_init = json.dumps({
@@ -7,7 +8,7 @@ async def init(websocket):
         "payload": {
             "headers": {
                 "content-type": "application/json",
-                "x-hasura-admin-secret": "hasura"
+                "x-hasura-admin-secret": HASURA_ADMIN_SECRET
             }
         }
     })
@@ -29,7 +30,7 @@ async def send_query(websocket, query):
 async def receive_data(websocket):
     response_json = {"type": None}
     while response_json["type"] != "data":
-        print("Data received...")
+        print("Data received...", response_json)
         response = await websocket.recv()
         response_json = json.loads(response)
 
