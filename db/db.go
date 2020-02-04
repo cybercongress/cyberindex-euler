@@ -143,8 +143,8 @@ func (db *Database) SetTx(tx sdk.TxResponse) (uint64, error) {
 	var id uint64
 
 	sqlStatement := `
-	INSERT INTO transaction (timestamp, gas_wanted, gas_used, height, txhash, events, messages, fee, signatures, memo)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+	INSERT INTO transaction (timestamp, gas_wanted, gas_used, height, txhash, events, messages, fee, signatures, memo, code)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 	RETURNING id;
 	`
 
@@ -167,19 +167,17 @@ func (db *Database) SetTx(tx sdk.TxResponse) (uint64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("failed to JSON encode tx fee: %s", err)
 	}
-
 	// convert Tendermint signatures into a more human-readable format
 	sigs := make([]signature, len(stdTx.GetSignatures()), len(stdTx.GetSignatures()))
 	for i, sig := range stdTx.GetSignatures() {
-		consPubKey, err := sdk.Bech32ifyConsPub(sig.PubKey) // nolint: typecheck
+		accPubKey, err := sdk.Bech32ifyAccPub(sig.PubKey) // nolint: typecheck // TODO possible core issue here
 		if err != nil {
 			return 0, fmt.Errorf("failed to convert validator public key %s: %s\n", sig.PubKey, err)
 		}
-
 		sigs[i] = signature{
 			Address:   sig.Address().String(),
 			Signature: base64.StdEncoding.EncodeToString(sig.Signature),
-			Pubkey:    consPubKey,
+			Pubkey:    accPubKey,
 		}
 	}
 
@@ -187,16 +185,16 @@ func (db *Database) SetTx(tx sdk.TxResponse) (uint64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("failed to JSON encode tx signatures: %s", err)
 	}
-
 	err = db.QueryRow(
 		sqlStatement,
 		tx.Timestamp, tx.GasWanted, tx.GasUsed, tx.Height, tx.TxHash, string(eventsBz),
-		string(msgsBz), string(feeBz), string(sigsBz), stdTx.GetMemo(),
+		string(msgsBz), string(feeBz), string(sigsBz), stdTx.GetMemo(), tx.Code,
 	).Scan(&id)
 
-
-	if err := db.ExportParsedTx(tx, msgsBz); err != nil {
-		return 0, err
+	if (tx.Code == 0) {
+		if err := db.ExportParsedTx(tx, msgsBz); err != nil {
+			return 0, err
+		}
 	}
 
 	return id, err
@@ -237,7 +235,7 @@ func (db *Database) SetLink(link link.Link, address sdk.AccAddress, tx sdk.TxRes
 
 	err := db.QueryRow(
 		sqlStatement,
-		link.From, link.To, address.String(), tx.Timestamp, tx.Height, tx.TxHash,
+		link.From, link.To, address, tx.Timestamp, tx.Height, tx.TxHash,
 	).Scan(&id)
 
 	return id, err
