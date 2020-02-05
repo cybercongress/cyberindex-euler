@@ -171,12 +171,18 @@ func (db *Database) SetTx(tx sdk.TxResponse) (uint64, error) {
 	// convert Tendermint signatures into a more human-readable format
 	sigs := make([]signature, len(stdTx.GetSignatures()), len(stdTx.GetSignatures()))
 	for i, sig := range stdTx.GetSignatures() {
-		accPubKey, err := sdk.Bech32ifyAccPub(sig.PubKey) // nolint: typecheck // TODO possible core issue here
+		accPubKey, err := sdk.Bech32ifyAccPub(sig.PubKey) // nolint: typecheck
 		if err != nil {
 			return 0, fmt.Errorf("failed to convert validator public key %s: %s\n", sig.PubKey, err)
 		}
+
+		accAddress, err := sdk.AccAddressFromHex(sig.Address().String())
+		if err != nil {
+			return 0, fmt.Errorf("failed to convert account address %s: %s\n", sig.Address().String(), err)
+		}
+
 		sigs[i] = signature{
-			Address:   sig.Address().String(),
+			Address:   accAddress.String(),
 			Signature: base64.StdEncoding.EncodeToString(sig.Signature),
 			Pubkey:    accPubKey,
 		}
@@ -239,6 +245,7 @@ func (db *Database) SetCyberlink(link link.Link, address sdk.AccAddress, tx sdk.
 		link.From, link.To, address.String(), tx.Timestamp, tx.Height, tx.TxHash,
 	).Scan(&id)
 
+	// TODO later upgrade tx/msgs indexing with new JUNO release
 	_, _ = db.SetObject(link.To, address, tx)
 	_, _ = db.SetObject(link.From, address, tx)
 
@@ -258,7 +265,6 @@ func (db *Database) SetObject(object link.Cid, address sdk.AccAddress, tx sdk.Tx
 		sqlStatement,
 		object, address.String(), tx.Timestamp, tx.Height, tx.TxHash,
 	).Scan(&id)
-	//log.Error().Err(err).Str("object: ", string(object)).Msg("failed to write object")
 
 	return id, err
 }
