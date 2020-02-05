@@ -44,4 +44,4 @@ docker exec -ti cyberindex_postgres psql -f /root/schema/rewards.sql -d $POSTGRE
 
 docker-compose up -d additional-crawlers 
 
-docker run --name cyberindex --network="host" cyberindex:latest
+docker run -d --name cyberindex --network="host" cyberindex:latest
