@@ -15,7 +15,8 @@ CREATE TABLE transaction (
     fee jsonb NOT NULL DEFAULT '{}'::jsonb,
     signatures jsonb NOT NULL DEFAULT '[]'::jsonb,
     memo character varying(256),
-    code integer DEFAULT 0
+    code integer DEFAULT 0,
+    rawlog jsonb NOT NULL DEFAULT '[]'::jsonb
 );
 
 -- Indices -------------------------------------------------------
