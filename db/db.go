@@ -234,17 +234,15 @@ func (db *Database) ExportParsedTx(tx sdk.TxResponse, msgsBz []byte) error {
 	for i, msg := range CyberMsgs {
 		if msg.Type == "cyberd/Link" {
 			for _, link := range msg.Value.Links {
-				_, err := db.SetCyberlink(link, msg.Value.Address, tx); if err != nil {
-					log.Error().Err(err).Str("hash", tx.TxHash).Msg("failed to write cyberlink")
-					return nil
+				_, errMsg := db.SetCyberlink(link, msg.Value.Address, tx); if errMsg != nil {
+					log.Error().Err(errMsg).Str("hash", tx.TxHash).Msg("failed to write cyberlink")
 				}
 			}
 		} else {
 			sig := stdTx.GetSignatures()[0] // TODO refactor this
 			accAddress, _ := sdk.AccAddressFromHex(sig.Address().String())
-			_, err := db.SetMessage(msg.Type, rawMsgs[i], accAddress.String(), tx); if err != nil {
-				log.Error().Err(err).Str("hash", tx.TxHash).Msg("failed to write message")
-				return nil
+			_, errMsg := db.SetMessage(msg.Type, rawMsgs[i], accAddress.String(), tx); if errMsg != nil {
+				log.Error().Err(errMsg).Str("hash", tx.TxHash).Msg("failed to write message")
 			}
 		}
 	}
@@ -268,10 +266,10 @@ func (db *Database) SetCyberlink(link link.Link, address sdk.AccAddress, tx sdk.
 
 	// TODO later upgrade tx/msgs indexing with new JUNO release
 	_, errMsg := db.SetObject(link.To, address, tx); if errMsg != nil {
-		log.Error().Err(err).Str("hash", tx.TxHash).Msg("failed to write object")
+		log.Error().Err(errMsg).Str("hash", tx.TxHash).Msg("failed to write object")
 	}
 	_, errMsg = db.SetObject(link.From, address, tx); if errMsg != nil {
-		log.Error().Err(err).Str("hash", tx.TxHash).Msg("failed to write object")
+		log.Error().Err(errMsg).Str("hash", tx.TxHash).Msg("failed to write object")
 	}
 
 	return id, err
