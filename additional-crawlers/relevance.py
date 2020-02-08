@@ -2,7 +2,7 @@ import requests
 
 
 def get_block_relevance():
-    result = requests.get("https://titan.cybernode.ai/api/top?page=0&perPage=10").json()
+    result = requests.get("https://titan.cybernode.ai/api/top?page=\"0\"&perPage=\"1000\"").json()
     return result["result"]["cids"]
 
 def save_block_relevance(cursor, block, cids):
