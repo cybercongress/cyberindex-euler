@@ -13,6 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
+	"github.com/tidwall/gjson"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -143,8 +144,8 @@ func (db *Database) SetTx(tx sdk.TxResponse) (uint64, error) {
 	var id uint64
 
 	sqlStatement := `
-	INSERT INTO transaction (timestamp, gas_wanted, gas_used, height, txhash, events, messages, fee, signatures, memo, code, rawlog)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+	INSERT INTO transaction (timestamp, gas_wanted, gas_used, height, txhash, subject, events, messages, fee, signatures, memo, code, rawlog)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 	RETURNING id;
 	`
 
@@ -194,7 +195,7 @@ func (db *Database) SetTx(tx sdk.TxResponse) (uint64, error) {
 	}
 	err = db.QueryRow(
 		sqlStatement,
-		tx.Timestamp, tx.GasWanted, tx.GasUsed, tx.Height, tx.TxHash, string(eventsBz),
+		tx.Timestamp, tx.GasWanted, tx.GasUsed, tx.Height, tx.TxHash, sigs[0].Address, string(eventsBz),
 		string(msgsBz), string(feeBz), string(sigsBz), stdTx.GetMemo(), int64(tx.Code), tx.RawLog,
 	).Scan(&id)
 
@@ -214,16 +215,34 @@ type LinkMsg struct {
 
 func (db *Database) ExportParsedTx(tx sdk.TxResponse, msgsBz []byte) error {
 
-	var Msgs []LinkMsg;
-	json.Unmarshal([]byte(msgsBz), &Msgs)
+	// TODO bad design for this, rewrite all using tx decoder and seperate logic
 
-	for _, msg := range Msgs {
+	var CyberMsgs []LinkMsg;
+	json.Unmarshal([]byte(msgsBz), &CyberMsgs)
+
+	stdTx, _ := tx.Tx.(auth.StdTx)
+
+	strMsgs := string(msgsBz)
+	parsedStrMsgs := gjson.Parse(strMsgs)
+	var rawMsgs []string;
+
+	parsedStrMsgs.ForEach(func(key, value gjson.Result) bool {
+		rawMsgs = append(rawMsgs, gjson.Get(value.String(), "value").String())
+		return true
+	})
+
+	for i, msg := range CyberMsgs {
 		if msg.Type == "cyberd/Link" {
 			for _, link := range msg.Value.Links {
-				_, err := db.SetCyberlink(link, msg.Value.Address, tx); if err != nil {
-					log.Error().Err(err).Str("hash", tx.TxHash).Msg("failed to write cyberlink")
-					return err
+				_, errMsg := db.SetCyberlink(link, msg.Value.Address, tx); if errMsg != nil {
+					log.Error().Err(errMsg).Str("hash", tx.TxHash).Msg("failed to write cyberlink")
 				}
+			}
+		} else {
+			sig := stdTx.GetSignatures()[0] // TODO refactor this
+			accAddress, _ := sdk.AccAddressFromHex(sig.Address().String())
+			_, errMsg := db.SetMessage(msg.Type, rawMsgs[i], accAddress.String(), tx); if errMsg != nil {
+				log.Error().Err(errMsg).Str("hash", tx.TxHash).Msg("failed to write message")
 			}
 		}
 	}
@@ -246,8 +265,29 @@ func (db *Database) SetCyberlink(link link.Link, address sdk.AccAddress, tx sdk.
 	).Scan(&id)
 
 	// TODO later upgrade tx/msgs indexing with new JUNO release
-	_, _ = db.SetObject(link.To, address, tx)
-	_, _ = db.SetObject(link.From, address, tx)
+	_, errMsg := db.SetObject(link.To, address, tx); if errMsg != nil {
+		log.Error().Err(errMsg).Str("hash", tx.TxHash).Msg("failed to write object")
+	}
+	_, errMsg = db.SetObject(link.From, address, tx); if errMsg != nil {
+		log.Error().Err(errMsg).Str("hash", tx.TxHash).Msg("failed to write object")
+	}
+
+	return id, err
+}
+
+func (db *Database) SetMessage(types string, value string, address string, tx sdk.TxResponse) (uint64, error) {
+	var id uint64
+
+	sqlStatement := `
+	INSERT INTO message (subject, type, value, timestamp, height, txhash)
+	VALUES ($1, $2, $3, $4, $5, $6)
+	RETURNING id;
+	`
+
+	err := db.QueryRow(
+		sqlStatement,
+		address, types, value, tx.Timestamp, tx.Height, tx.TxHash,
+	).Scan(&id)
 
 	return id, err
 }

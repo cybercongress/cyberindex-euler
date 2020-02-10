@@ -38,6 +38,7 @@ docker exec -ti cyberindex_postgres psql -f /root/schema/cyberlink.sql -d $POSTG
 
 docker exec -ti cyberindex_postgres psql -f /root/schema/bandwidth_price.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
 docker exec -ti cyberindex_postgres psql -f /root/schema/relevance.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
+docker exec -ti cyberindex_postgres psql -f /root/schema/message.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
 
 docker exec -ti cyberindex_postgres psql -f /root/schema/karma.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
 docker exec -ti cyberindex_postgres psql -f /root/schema/rewards.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
