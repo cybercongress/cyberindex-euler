@@ -3,7 +3,7 @@ from config import RPC_URL
 
 
 def get_block_relevance():
-    result = requests.get("{}/top?page=\"0\"&perPage=\"1000\"".format(RPC_URL)).json()
+    result = requests.get("{}/api/top?page=\"0\"&perPage=\"1000\"".format(RPC_URL)).json()
     return result["result"]["cids"]
 
 def save_block_relevance(cursor, block, cids):
