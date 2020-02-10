@@ -55,5 +55,7 @@ async def subscribe_block(uri, save_state):
 
         while True:
             data = await receive_data(websocket)
-            block = int(data["block_aggregate"]["aggregate"]["max"]["height"])
+            block = data["block_aggregate"]["aggregate"]["max"]["height"]
+            if not block:
+                block = 0
             save_state(block)
