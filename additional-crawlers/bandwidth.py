@@ -1,8 +1,9 @@
 import requests
+from config import RPC_URL
 
 
 def get_bandwidth_price():
-    result = requests.get("https://titan.cybernode.ai/api/current_bandwidth_price").json()
+    result = requests.get("{}/api/current_bandwidth_price".format(RPC_URL)).json()
     return result["result"]["price"]
 
 
