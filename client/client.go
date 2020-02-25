@@ -11,9 +11,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	junocdc "github.com/fissionlabsio/juno/codec"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+
+	junocdc "github.com/cybercongress/cyberindex/codec"
 )
 
 // ClientProxy implements a wrapper around both a Tendermint RPC client and a
@@ -25,7 +26,7 @@ type ClientProxy struct {
 }
 
 func New(rpcNode, clientNode string) (ClientProxy, error) {
-	rpcClient := rpcclient.NewHTTP(rpcNode, "/websocket")
+	rpcClient, _ := rpcclient.NewHTTP(rpcNode, "/websocket")
 
 	if err := rpcClient.Start(); err != nil {
 		return ClientProxy{}, err

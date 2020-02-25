@@ -11,6 +11,6 @@ var Codec *codec.Codec
 
 func init() {
 	Codec = app.MakeCodec()
-	app.SetPrefix()
+	app.SetConfig()
 	Codec.Seal()
 }

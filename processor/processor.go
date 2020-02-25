@@ -1,9 +1,10 @@
 package processor
 
 import (
-	"github.com/fissionlabsio/juno/client"
-	"github.com/fissionlabsio/juno/db"
 	"github.com/rs/zerolog/log"
+
+	"github.com/cybercongress/cyberindex/client"
+	"github.com/cybercongress/cyberindex/db"
 )
 
 type (

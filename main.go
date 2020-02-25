@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/fissionlabsio/juno/cmd"
+	"github.com/cybercongress/cyberindex/cmd"
 )
 
 func main() {

@@ -4,10 +4,11 @@ import (
 	"flag"
 	"log"
 
-	"github.com/fissionlabsio/juno/client"
-	"github.com/fissionlabsio/juno/config"
-	"github.com/fissionlabsio/juno/db"
 	"github.com/pkg/errors"
+
+	"github.com/cybercongress/cyberindex/client"
+	"github.com/cybercongress/cyberindex/config"
+	"github.com/cybercongress/cyberindex/db"
 )
 
 var configPath string

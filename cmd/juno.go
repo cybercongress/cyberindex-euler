@@ -7,15 +7,16 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/fissionlabsio/juno/client"
-	"github.com/fissionlabsio/juno/config"
-	"github.com/fissionlabsio/juno/db"
-	"github.com/fissionlabsio/juno/processor"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	tmtypes "github.com/tendermint/tendermint/types"
+
+	"github.com/cybercongress/cyberindex/client"
+	"github.com/cybercongress/cyberindex/config"
+	"github.com/cybercongress/cyberindex/db"
+	"github.com/cybercongress/cyberindex/processor"
 )
 
 const (

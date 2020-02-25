@@ -6,14 +6,15 @@ import (
 	"encoding/json"
 	"fmt"
 
-	junocdc "github.com/fissionlabsio/juno/codec"
-	"github.com/fissionlabsio/juno/config"
 	"github.com/cybercongress/cyberd/x/link"
 	_ "github.com/lib/pq" // nolint
 	"github.com/rs/zerolog/log"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 	"github.com/tidwall/gjson"
+
+	junocdc "github.com/cybercongress/cyberindex/codec"
+	"github.com/cybercongress/cyberindex/config"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -106,7 +107,7 @@ func (db *Database) SetPreCommit(pc *tmtypes.CommitSig, vp, pp int64) (uint64, e
 
 	err := db.QueryRow(
 		sqlStatement,
-		pc.Height, pc.Round, pc.ValidatorAddress.String(), pc.Timestamp, vp, pp,
+		pc..Height, pc.Round, pc.ValidatorAddress.String(), pc.Timestamp, vp, pp,
 	).Scan(&id)
 
 	return id, err
