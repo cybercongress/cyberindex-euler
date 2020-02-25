@@ -66,7 +66,7 @@ func (cp ClientProxy) TendermintTx(hash string) (*tmctypes.ResultTx, error) {
 // Validators returns all the known Tendermint validators for a given block
 // height. An error is returned if the query fails.
 func (cp ClientProxy) Validators(height int64) (*tmctypes.ResultValidators, error) {
-	return cp.rpcClient.Validators(&height)
+	return cp.rpcClient.Validators(&height, 0, 100)
 }
 
 // Stop defers the node stop execution to the RPC client.

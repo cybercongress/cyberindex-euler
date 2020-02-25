@@ -67,7 +67,7 @@ func (w Worker) process(height int64) error {
 		return err
 	}
 
-	vals, err := w.cp.Validators(block.Block.LastCommit.Height())
+	vals, err := w.cp.Validators(block.Block.LastCommit.Height)
 	if err != nil {
 		log.Info().Err(err).Int64("height", height).Msg("failed to get validators for block")
 		return err
