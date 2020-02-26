@@ -6,14 +6,15 @@ import (
 	"encoding/json"
 	"fmt"
 
-	cdc "github.com/cybercongress/cyberindex/codec"
-	"github.com/cybercongress/cyberindex/config"
-	"github.com/cybercongress/cyberd/x/link"
+	"github.com/cybercongress/go-cyber/x/link"
 	_ "github.com/lib/pq" // nolint
 	"github.com/rs/zerolog/log"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 	"github.com/tidwall/gjson"
+
+	cdc "github.com/cybercongress/cyberindex/codec"
+	"github.com/cybercongress/cyberindex/config"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"

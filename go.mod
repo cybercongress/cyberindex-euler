@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/cosmos/cosmos-sdk v0.37.4
-	github.com/cybercongress/cyberd v0.1.5-rc1.0.20191220155441-a1b786558db0
+	github.com/cybercongress/go-cyber v0.1.5-rc1.0.20200226164556-d05750e5dc3c
 	github.com/lib/pq v1.0.0
 	github.com/pelletier/go-toml v1.5.0 // indirect
 	github.com/pkg/errors v0.8.1

@@ -2,7 +2,7 @@ package codec
 
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
-	app "github.com/cybercongress/cyberd/app"
+	app "github.com/cybercongress/go-cyber/app"
 )
 
 // Codec is the application-wide Amino codec and is initialized upon package

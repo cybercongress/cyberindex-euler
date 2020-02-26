@@ -45,8 +45,8 @@ github.com/cosmos/ledger-cosmos-go v0.10.3/go.mod h1:J8//BsAGTo3OC/vDLjMRFLW6q0W
 github.com/cosmos/ledger-go v0.9.2 h1:Nnao/dLwaVTk1Q5U9THldpUMMXU94BOTWPddSmVB6pI=
 github.com/cosmos/ledger-go v0.9.2/go.mod h1:oZJ2hHAZROdlHiwTg4t7kP+GKIIkBT+o6c9QWFanOyI=
 github.com/cpuguy83/go-md2man v1.0.10/go.mod h1:SmD6nW6nTyfqj6ABTjUi3V3JVMnlJmwcJI5acqYI6dE=
-github.com/cybercongress/cyberd v0.1.5-rc1.0.20191220155441-a1b786558db0 h1:ki86sj78oUEiAymdzr+/HHAIys9ZNrmzCr8BdWRhTvc=
-github.com/cybercongress/cyberd v0.1.5-rc1.0.20191220155441-a1b786558db0/go.mod h1:FDWyAU0pP5AK9zWLnxS7IPR00s9dVoYkqjy2EiC83/o=
+github.com/cybercongress/go-cyber v0.1.5-rc1.0.20200226164556-d05750e5dc3c h1:BAYB8bZF4pyPWPfAIwrbhVmT7BVQWrWbSLM8Ddq+BJE=
+github.com/cybercongress/go-cyber v0.1.5-rc1.0.20200226164556-d05750e5dc3c/go.mod h1:GhTgpaip2J2PHWtBt9qHWPeMSJksdTfUe2NyzNififg=
 github.com/davecgh/go-spew v0.0.0-20171005155431-ecdeabc65495/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
