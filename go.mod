@@ -1,4 +1,4 @@
-module github.com/fissionlabsio/juno
+module github.com/cybercongress/cyberindex
 
 go 1.13
 

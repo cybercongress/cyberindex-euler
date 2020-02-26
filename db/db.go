@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	junocdc "github.com/fissionlabsio/juno/codec"
-	"github.com/fissionlabsio/juno/config"
+	cdc "github.com/cybercongress/cyberindex/codec"
+	"github.com/cybercongress/cyberindex/config"
 	"github.com/cybercongress/cyberd/x/link"
 	_ "github.com/lib/pq" // nolint
 	"github.com/rs/zerolog/log"
@@ -154,17 +154,17 @@ func (db *Database) SetTx(tx sdk.TxResponse) (uint64, error) {
 		return 0, fmt.Errorf("unsupported tx type: %T", tx.Tx)
 	}
 
-	eventsBz, err := junocdc.Codec.MarshalJSON(tx.Events)
+	eventsBz, err := cdc.Codec.MarshalJSON(tx.Events)
 	if err != nil {
 		return 0, fmt.Errorf("failed to JSON encode tx events: %s", err)
 	}
 
-	msgsBz, err := junocdc.Codec.MarshalJSON(stdTx.GetMsgs())
+	msgsBz, err := cdc.Codec.MarshalJSON(stdTx.GetMsgs())
 	if err != nil {
 		return 0, fmt.Errorf("failed to JSON encode tx messages: %s", err)
 	}
 
-	feeBz, err := junocdc.Codec.MarshalJSON(stdTx.Fee)
+	feeBz, err := cdc.Codec.MarshalJSON(stdTx.Fee)
 	if err != nil {
 		return 0, fmt.Errorf("failed to JSON encode tx fee: %s", err)
 	}
@@ -189,7 +189,7 @@ func (db *Database) SetTx(tx sdk.TxResponse) (uint64, error) {
 		}
 	}
 
-	sigsBz, err := junocdc.Codec.MarshalJSON(sigs)
+	sigsBz, err := cdc.Codec.MarshalJSON(sigs)
 	if err != nil {
 		return 0, fmt.Errorf("failed to JSON encode tx signatures: %s", err)
 	}

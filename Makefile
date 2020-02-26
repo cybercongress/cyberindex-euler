@@ -13,22 +13,22 @@ all: ci-lint ci-test install
 # Build / Install
 ###############################################################################
 
-LD_FLAGS = -X github.com/fissionlabsio/juno/cmd.Version=$(VERSION) \
-	-X github.com/fissionlabsio/juno/cmd.Commit=$(COMMIT)
+LD_FLAGS = -X github.com/cybercongress/cyberindex/cmd.Version=$(VERSION) \
+	-X github.com/cybercongress/cyberindex/cmd.Commit=$(COMMIT)
 
 BUILD_FLAGS := -ldflags '$(LD_FLAGS)'
 
 build: go.sum
 ifeq ($(OS),Windows_NT)
-	@echo "building juno binary..."
-	@go build -mod=readonly $(BUILD_FLAGS) -o build/juno.exe .
+	@echo "building cyberindex binary..."
+	@go build -mod=readonly $(BUILD_FLAGS) -o build/cyberindex.exe .
 else
-	@echo "building juno binary..."
-	@go build -mod=readonly $(BUILD_FLAGS) -o build/juno .
+	@echo "building cyberindex binary..."
+	@go build -mod=readonly $(BUILD_FLAGS) -o build/cyberindex .
 endif
 
 install: go.sum
-	@echo "installing juno binary..."
+	@echo "installing cyberindex binary..."
 	@go install $(BUILD_FLAGS) .
 
 ###############################################################################

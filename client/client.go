@@ -11,7 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	junocdc "github.com/fissionlabsio/juno/codec"
+	cdc "github.com/cybercongress/cyberindex/codec"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
@@ -31,7 +31,7 @@ func New(rpcNode, clientNode string) (ClientProxy, error) {
 		return ClientProxy{}, err
 	}
 
-	return ClientProxy{rpcClient, clientNode, junocdc.Codec}, nil
+	return ClientProxy{rpcClient, clientNode, cdc.Codec}, nil
 }
 
 // LatestHeight returns the latest block height on the active chain. An error
