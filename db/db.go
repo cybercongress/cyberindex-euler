@@ -6,14 +6,15 @@ import (
 	"encoding/json"
 	"fmt"
 
-	cdc "github.com/cybercongress/cyberindex/codec"
-	"github.com/cybercongress/cyberindex/config"
-	"github.com/cybercongress/cyberd/x/link"
+	"github.com/cybercongress/go-cyber/x/link"
 	_ "github.com/lib/pq" // nolint
 	"github.com/rs/zerolog/log"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 	"github.com/tidwall/gjson"
+
+	cdc "github.com/cybercongress/cyberindex/codec"
+	"github.com/cybercongress/cyberindex/config"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -95,18 +96,18 @@ func (db *Database) SetValidator(addr, pk string) error {
 
 // SetPreCommit stores a validator's pre-commit and returns the resulting record
 // ID. An error is returned if the operation fails.
-func (db *Database) SetPreCommit(pc *tmtypes.CommitSig, vp, pp int64) (uint64, error) {
+func (db *Database) SetPreCommit(pc tmtypes.CommitSig, vp, pp int64) (uint64, error) {
 	var id uint64
 
 	sqlStatement := `
-	INSERT INTO pre_commit (height, round, validator_address, timestamp, voting_power, proposer_priority)
-	VALUES ($1, $2, $3, $4, $5, $6)
+	INSERT INTO pre_commit (validator_address, timestamp, voting_power, proposer_priority)
+	VALUES ($1, $2, $3, $4)
 	RETURNING id;
 	`
 
 	err := db.QueryRow(
 		sqlStatement,
-		pc.Height, pc.Round, pc.ValidatorAddress.String(), pc.Timestamp, vp, pp,
+		pc.ValidatorAddress.String(), pc.Timestamp, vp, pp,
 	).Scan(&id)
 
 	return id, err
@@ -118,14 +119,14 @@ func (db *Database) SetBlock(b *tmctypes.ResultBlock, tg, pc uint64) (uint64, er
 	var id uint64
 
 	sqlStatement := `
-	INSERT INTO block (height, hash, num_txs, total_gas, proposer_address, pre_commits, timestamp)
-	VALUES ($1, $2, $3, $4, $5, $6, $7)
+	INSERT INTO block (height, hash, total_gas, proposer_address, pre_commits, timestamp)
+	VALUES ($1, $2, $3, $4, $5, $6)
 	RETURNING id;
 	`
 
 	err := db.QueryRow(
 		sqlStatement,
-		b.Block.Height, b.Block.Hash().String(), b.Block.NumTxs,
+		b.Block.Height, b.Block.Hash().String(),
 		tg, b.Block.ProposerAddress.String(), pc, b.Block.Time,
 	).Scan(&id)
 
@@ -154,7 +155,7 @@ func (db *Database) SetTx(tx sdk.TxResponse) (uint64, error) {
 		return 0, fmt.Errorf("unsupported tx type: %T", tx.Tx)
 	}
 
-	eventsBz, err := cdc.Codec.MarshalJSON(tx.Events)
+	eventsBz, err := cdc.Codec.MarshalJSON(tx.Logs)
 	if err != nil {
 		return 0, fmt.Errorf("failed to JSON encode tx events: %s", err)
 	}
@@ -171,20 +172,20 @@ func (db *Database) SetTx(tx sdk.TxResponse) (uint64, error) {
 
 	// convert Tendermint signatures into a more human-readable format
 	sigs := make([]signature, len(stdTx.GetSignatures()), len(stdTx.GetSignatures()))
-	for i, sig := range stdTx.GetSignatures() {
-		accPubKey, err := sdk.Bech32ifyAccPub(sig.PubKey) // nolint: typecheck
+	for i, pub := range stdTx.GetPubKeys() {
+		accPubKey, err := sdk.Bech32ifyPubKey(sdk.Bech32PubKeyTypeAccPub,pub)
 		if err != nil {
-			return 0, fmt.Errorf("failed to convert validator public key %s: %s\n", sig.PubKey, err)
+			return 0, fmt.Errorf("failed to convert validator public key %s: %s\n", pub, err)
 		}
 
-		accAddress, err := sdk.AccAddressFromHex(sig.Address().String())
+		accAddress, err := sdk.AccAddressFromHex(stdTx.GetSigners()[i].String())
 		if err != nil {
-			return 0, fmt.Errorf("failed to convert account address %s: %s\n", sig.Address().String(), err)
+			return 0, fmt.Errorf("failed to convert account address %s: %s\n", stdTx.GetSigners()[i].String(), err)
 		}
 
 		sigs[i] = signature{
 			Address:   accAddress.String(),
-			Signature: base64.StdEncoding.EncodeToString(sig.Signature),
+			Signature: base64.StdEncoding.EncodeToString(stdTx.GetSignatures()[i]),
 			Pubkey:    accPubKey,
 		}
 	}
@@ -196,11 +197,13 @@ func (db *Database) SetTx(tx sdk.TxResponse) (uint64, error) {
 	err = db.QueryRow(
 		sqlStatement,
 		tx.Timestamp, tx.GasWanted, tx.GasUsed, tx.Height, tx.TxHash, sigs[0].Address, string(eventsBz),
-		string(msgsBz), string(feeBz), string(sigsBz), stdTx.GetMemo(), int64(tx.Code)	, tx.Codespace, tx.RawLog,
+		string(msgsBz), string(feeBz), string(sigsBz), stdTx.GetMemo(), int64(tx.Code), tx.Codespace, tx.RawLog,
 	).Scan(&id)
 
-	if err := db.ExportParsedTx(tx, msgsBz); err != nil {
-		return 0, err
+	if (tx.Code == 0) {
+		if err := db.ExportParsedTx(tx, msgsBz); err != nil {
+			return 0, err
+		}
 	}
 
 	return id, err
@@ -237,8 +240,8 @@ func (db *Database) ExportParsedTx(tx sdk.TxResponse, msgsBz []byte) error {
 				}
 			}
 		} else {
-			sig := stdTx.GetSignatures()[0] // TODO refactor this
-			accAddress, _ := sdk.AccAddressFromHex(sig.Address().String())
+			//sig := stdTx.GetSignatures()[0] // TODO refactor this
+			accAddress, _ := sdk.AccAddressFromHex(stdTx.GetSigners()[i].String())
 			_, errMsg := db.SetMessage(msg.Type, rawMsgs[i], accAddress.String(), tx); if errMsg != nil {
 				log.Error().Err(errMsg).Str("hash", tx.TxHash).Msg("failed to write message")
 			}
@@ -252,14 +255,14 @@ func (db *Database) SetCyberlink(link link.Link, address sdk.AccAddress, tx sdk.
 	var id uint64
 
 	sqlStatement := `
-	INSERT INTO cyberlink (object_from, object_to, subject, timestamp, height, txhash, code)
-	VALUES ($1, $2, $3, $4, $5, $6, &7)
+	INSERT INTO cyberlink (object_from, object_to, subject, timestamp, height, txhash)
+	VALUES ($1, $2, $3, $4, $5, $6)
 	RETURNING id;
 	`
 
 	err := db.QueryRow(
 		sqlStatement,
-		link.From, link.To, address.String(), tx.Timestamp, tx.Height, tx.TxHash, tx.Code,
+		link.From, link.To, address.String(), tx.Timestamp, tx.Height, tx.TxHash,
 	).Scan(&id)
 
 	// TODO later upgrade tx/msgs indexing with new JUNO release
@@ -277,14 +280,14 @@ func (db *Database) SetMessage(types string, value string, address string, tx sd
 	var id uint64
 
 	sqlStatement := `
-	INSERT INTO message (subject, type, value, timestamp, height, txhash, code, codespace)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+	INSERT INTO message (subject, type, value, timestamp, height, txhash)
+	VALUES ($1, $2, $3, $4, $5, $6)
 	RETURNING id;
 	`
 
 	err := db.QueryRow(
 		sqlStatement,
-		address, types, value, tx.Timestamp, tx.Height, tx.TxHash, tx.Code, tx.Codespace,
+		address, types, value, tx.Timestamp, tx.Height, tx.TxHash,
 	).Scan(&id)
 
 	return id, err
@@ -312,7 +315,7 @@ func (db *Database) SetObject(object link.Cid, address sdk.AccAddress, tx sdk.Tx
 // is returned if the write fails.
 func (db *Database) ExportBlock(b *tmctypes.ResultBlock, txs []sdk.TxResponse, vals *tmctypes.ResultValidators) error {
 	totalGas := sumGasTxs(txs)
-	preCommits := uint64(len(b.Block.LastCommit.Precommits))
+	preCommits := uint64(len(b.Block.LastCommit.Signatures))
 
 	// Set the block's proposer if it does not already exist. This may occur if
 	// the proposer has never signed before.
@@ -350,7 +353,7 @@ func (db *Database) ExportBlock(b *tmctypes.ResultBlock, txs []sdk.TxResponse, v
 func (db *Database) ExportValidator(val *tmtypes.Validator) error {
 	valAddr := val.Address.String()
 
-	consPubKey, err := sdk.Bech32ifyConsPub(val.PubKey) // nolint: typecheck
+	consPubKey, err := sdk.Bech32ifyPubKey(sdk.Bech32PubKeyTypeConsPub,val.PubKey) // nolint: typecheck
 	if err != nil {
 		log.Error().Err(err).Str("validator", valAddr).Msg("failed to convert validator public key")
 		return err
@@ -369,25 +372,23 @@ func (db *Database) ExportValidator(val *tmtypes.Validator) error {
 // returned if any write fails or if there is any missing aggregated data.
 func (db *Database) ExportPreCommits(commit *tmtypes.Commit, vals *tmctypes.ResultValidators) error {
 	// persist all validators and pre-commits
-	for _, pc := range commit.Precommits {
-		if pc != nil {
-			valAddr := pc.ValidatorAddress.String()
+	for _, pc := range commit.Signatures {
+		valAddr := pc.ValidatorAddress.String()
 
-			val := findValidatorByAddr(valAddr, vals)
-			if val == nil {
-				err := fmt.Errorf("failed to find validator by address %s for block %d", valAddr, commit.Height())
-				log.Error().Msg(err.Error())
-				return err
-			}
+		val := findValidatorByAddr(valAddr, vals)
+		if val == nil {
+			err := fmt.Errorf("failed to find validator by address %s for block %d", valAddr, commit.Height)
+			log.Error().Msg(err.Error())
+			return err
+		}
 
-			if err := db.ExportValidator(val); err != nil {
-				return err
-			}
+		if err := db.ExportValidator(val); err != nil {
+			return err
+		}
 
-			if _, err := db.SetPreCommit(pc, val.VotingPower, val.ProposerPriority); err != nil {
-				log.Error().Err(err).Str("validator", valAddr).Msg("failed to persist validator pre-commit")
-				return err
-			}
+		if _, err := db.SetPreCommit(pc, val.VotingPower, val.ProposerPriority); err != nil {
+			log.Error().Err(err).Str("validator", valAddr).Msg("failed to persist validator pre-commit")
+			return err
 		}
 	}
 

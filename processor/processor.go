@@ -1,9 +1,10 @@
 package processor
 
 import (
+	"github.com/rs/zerolog/log"
+
 	"github.com/cybercongress/cyberindex/client"
 	"github.com/cybercongress/cyberindex/db"
-	"github.com/rs/zerolog/log"
 )
 
 type (
@@ -66,7 +67,7 @@ func (w Worker) process(height int64) error {
 		return err
 	}
 
-	vals, err := w.cp.Validators(block.Block.LastCommit.Height())
+	vals, err := w.cp.Validators(block.Block.LastCommit.Height, 0, 100) // TODO upgrade to take all
 	if err != nil {
 		log.Info().Err(err).Int64("height", height).Msg("failed to get validators for block")
 		return err

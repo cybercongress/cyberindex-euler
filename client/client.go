@@ -25,7 +25,7 @@ type ClientProxy struct {
 }
 
 func New(rpcNode, clientNode string) (ClientProxy, error) {
-	rpcClient := rpcclient.NewHTTP(rpcNode, "/websocket")
+	rpcClient, _ := rpcclient.NewHTTP(rpcNode, "/websocket")
 
 	if err := rpcClient.Start(); err != nil {
 		return ClientProxy{}, err
@@ -64,8 +64,8 @@ func (cp ClientProxy) TendermintTx(hash string) (*tmctypes.ResultTx, error) {
 
 // Validators returns all the known Tendermint validators for a given block
 // height. An error is returned if the query fails.
-func (cp ClientProxy) Validators(height int64) (*tmctypes.ResultValidators, error) {
-	return cp.rpcClient.Validators(&height)
+func (cp ClientProxy) Validators(height int64, page, perPage int) (*tmctypes.ResultValidators, error) {
+	return cp.rpcClient.Validators(&height, page, perPage)
 }
 
 // Stop defers the node stop execution to the RPC client.
