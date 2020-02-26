@@ -6,7 +6,7 @@ CREATE TABLE message
     value jsonb NOT NULL DEFAULT '{}'::jsonb,
     timestamp timestamp without time zone NOT NULL,
     height integer NOT NULL REFERENCES block(height),
-    txhash CHAR(64) NOT NULL UNIQUE REFERENCES transaction(txhash),
+    txhash CHAR(64) NOT NULL REFERENCES transaction(txhash),
     code integer DEFAULT 0,
     codespace character varying(64)
 );
