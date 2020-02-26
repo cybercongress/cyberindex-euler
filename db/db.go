@@ -144,8 +144,8 @@ func (db *Database) SetTx(tx sdk.TxResponse) (uint64, error) {
 	var id uint64
 
 	sqlStatement := `
-	INSERT INTO transaction (timestamp, gas_wanted, gas_used, height, txhash, subject, events, messages, fee, signatures, memo, code, rawlog)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+	INSERT INTO transaction (timestamp, gas_wanted, gas_used, height, txhash, subject, events, messages, fee, signatures, memo, code, codespace, rawlog)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 	RETURNING id;
 	`
 
@@ -196,13 +196,11 @@ func (db *Database) SetTx(tx sdk.TxResponse) (uint64, error) {
 	err = db.QueryRow(
 		sqlStatement,
 		tx.Timestamp, tx.GasWanted, tx.GasUsed, tx.Height, tx.TxHash, sigs[0].Address, string(eventsBz),
-		string(msgsBz), string(feeBz), string(sigsBz), stdTx.GetMemo(), int64(tx.Code), tx.RawLog,
+		string(msgsBz), string(feeBz), string(sigsBz), stdTx.GetMemo(), int64(tx.Code)	, tx.Codespace, tx.RawLog,
 	).Scan(&id)
 
-	if (tx.Code == 0) {
-		if err := db.ExportParsedTx(tx, msgsBz); err != nil {
-			return 0, err
-		}
+	if err := db.ExportParsedTx(tx, msgsBz); err != nil {
+		return 0, err
 	}
 
 	return id, err
@@ -254,14 +252,14 @@ func (db *Database) SetCyberlink(link link.Link, address sdk.AccAddress, tx sdk.
 	var id uint64
 
 	sqlStatement := `
-	INSERT INTO cyberlink (object_from, object_to, subject, timestamp, height, txhash)
-	VALUES ($1, $2, $3, $4, $5, $6)
+	INSERT INTO cyberlink (object_from, object_to, subject, timestamp, height, txhash, code)
+	VALUES ($1, $2, $3, $4, $5, $6, &7)
 	RETURNING id;
 	`
 
 	err := db.QueryRow(
 		sqlStatement,
-		link.From, link.To, address.String(), tx.Timestamp, tx.Height, tx.TxHash,
+		link.From, link.To, address.String(), tx.Timestamp, tx.Height, tx.TxHash, tx.Code,
 	).Scan(&id)
 
 	// TODO later upgrade tx/msgs indexing with new JUNO release
@@ -279,14 +277,14 @@ func (db *Database) SetMessage(types string, value string, address string, tx sd
 	var id uint64
 
 	sqlStatement := `
-	INSERT INTO message (subject, type, value, timestamp, height, txhash)
-	VALUES ($1, $2, $3, $4, $5, $6)
+	INSERT INTO message (subject, type, value, timestamp, height, txhash, code, codespace)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	RETURNING id;
 	`
 
 	err := db.QueryRow(
 		sqlStatement,
-		address, types, value, tx.Timestamp, tx.Height, tx.TxHash,
+		address, types, value, tx.Timestamp, tx.Height, tx.TxHash, tx.Code, tx.Codespace,
 	).Scan(&id)
 
 	return id, err

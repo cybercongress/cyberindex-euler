@@ -17,6 +17,7 @@ CREATE TABLE transaction (
     signatures jsonb NOT NULL DEFAULT '[]'::jsonb,
     memo character varying(256),
     code integer DEFAULT 0,
+    codespace character varying(64),
     rawlog jsonb NOT NULL DEFAULT '[]'::jsonb
 );
 
