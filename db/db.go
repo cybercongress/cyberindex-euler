@@ -171,21 +171,22 @@ func (db *Database) SetTx(tx sdk.TxResponse) (uint64, error) {
 	}
 
 	// convert Tendermint signatures into a more human-readable format
+	// TODO fix signatures indexing
 	sigs := make([]signature, len(stdTx.GetSignatures()), len(stdTx.GetSignatures()))
 	for i, pub := range stdTx.GetPubKeys() {
 		accPubKey, err := sdk.Bech32ifyPubKey(sdk.Bech32PubKeyTypeAccPub,pub)
 		if err != nil {
 			return 0, fmt.Errorf("failed to convert validator public key %s: %s\n", pub, err)
 		}
-
-		accAddress, err := sdk.AccAddressFromHex(stdTx.GetSigners()[i].String())
+		
+		accAddress := stdTx.GetSigners()[0].String()
 		if err != nil {
-			return 0, fmt.Errorf("failed to convert account address %s: %s\n", stdTx.GetSigners()[i].String(), err)
+			return 0, fmt.Errorf("failed to convert account address %s: %s\n", stdTx.GetSigners()[0].String(), err)
 		}
 
 		sigs[i] = signature{
-			Address:   accAddress.String(),
-			Signature: base64.StdEncoding.EncodeToString(stdTx.GetSignatures()[i]),
+			Address:   accAddress,
+			Signature: base64.StdEncoding.EncodeToString(stdTx.GetSignatures()[0]),
 			Pubkey:    accPubKey,
 		}
 	}
@@ -214,9 +215,8 @@ type LinkMsg struct {
 	Value link.Msg
 }
 
+// TODO bad design for this, rewrite all using tx decoder and seperate logic
 func (db *Database) ExportParsedTx(tx sdk.TxResponse, msgsBz []byte) error {
-
-	// TODO bad design for this, rewrite all using tx decoder and seperate logic
 
 	var CyberMsgs []LinkMsg;
 	json.Unmarshal([]byte(msgsBz), &CyberMsgs)
@@ -239,12 +239,10 @@ func (db *Database) ExportParsedTx(tx sdk.TxResponse, msgsBz []byte) error {
 					log.Error().Err(errMsg).Str("hash", tx.TxHash).Msg("failed to write cyberlink")
 				}
 			}
-		} else {
-			//sig := stdTx.GetSignatures()[0] // TODO refactor this
-			accAddress, _ := sdk.AccAddressFromHex(stdTx.GetSigners()[i].String())
-			_, errMsg := db.SetMessage(msg.Type, rawMsgs[i], accAddress.String(), tx); if errMsg != nil {
-				log.Error().Err(errMsg).Str("hash", tx.TxHash).Msg("failed to write message")
-			}
+		}
+		accAddress := stdTx.GetSigners()[0].String()
+		_, errMsg := db.SetMessage(msg.Type, rawMsgs[i], accAddress, tx); if errMsg != nil {
+			log.Error().Err(errMsg).Str("hash", tx.TxHash).Msg("failed to write message")
 		}
 	}
 
@@ -265,7 +263,6 @@ func (db *Database) SetCyberlink(link link.Link, address sdk.AccAddress, tx sdk.
 		link.From, link.To, address.String(), tx.Timestamp, tx.Height, tx.TxHash,
 	).Scan(&id)
 
-	// TODO later upgrade tx/msgs indexing with new JUNO release
 	_, errMsg := db.SetObject(link.To, address, tx); if errMsg != nil {
 		log.Error().Err(errMsg).Str("hash", tx.TxHash).Msg("failed to write object")
 	}
