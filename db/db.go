@@ -244,12 +244,12 @@ func (db *Database) ExportParsedTx(tx sdk.TxResponse, msgsBz []byte) error {
 					}
 				}
 			}
-		} else {
-			sig := stdTx.GetSignatures()[0] // TODO refactor this
-			accAddress, _ := sdk.AccAddressFromHex(sig.Address().String())
-			_, errMsg := db.SetMessage(msg.Type, rawMsgs[i], accAddress.String(), tx); if errMsg != nil {
-				log.Error().Err(errMsg).Str("hash", tx.TxHash).Msg("failed to write message")
-			}
+		}
+
+		sig := stdTx.GetSignatures()[0] // TODO refactor this
+		accAddress, _ := sdk.AccAddressFromHex(sig.Address().String())
+		_, errMsg := db.SetMessage(msg.Type, rawMsgs[i], accAddress.String(), tx); if errMsg != nil {
+			log.Error().Err(errMsg).Str("hash", tx.TxHash).Msg("failed to write message")
 		}
 	}
 
@@ -260,14 +260,14 @@ func (db *Database) SetCyberlink(link link.Link, address sdk.AccAddress, tx sdk.
 	var id uint64
 
 	sqlStatement := `
-	INSERT INTO cyberlink (object_from, object_to, subject, timestamp, height, txhash, code)
-	VALUES ($1, $2, $3, $4, $5, $6, &7)
+	INSERT INTO cyberlink (object_from, object_to, subject, timestamp, height, txhash)
+	VALUES ($1, $2, $3, $4, $5, $6)
 	RETURNING id;
 	`
 
 	err := db.QueryRow(
 		sqlStatement,
-		link.From, link.To, address.String(), tx.Timestamp, tx.Height, tx.TxHash, tx.Code,
+		link.From, link.To, address.String(), tx.Timestamp, tx.Height, tx.TxHash,
 	).Scan(&id)
 
 	// TODO later upgrade tx/msgs indexing with new JUNO release
