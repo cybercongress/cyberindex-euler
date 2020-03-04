@@ -170,6 +170,11 @@ func (db *Database) SetTx(tx sdk.TxResponse) (uint64, error) {
 		return 0, fmt.Errorf("failed to JSON encode tx fee: %s", err)
 	}
 
+	logBz, err := cdc.Codec.MarshalJSON(tx.RawLog)
+	if err != nil {
+		return 0, fmt.Errorf("failed to JSON encode tx log: %s", err)
+	}
+
 	// convert Tendermint signatures into a more human-readable format
 	// TODO fix signatures indexing
 	sigs := make([]signature, len(stdTx.GetSignatures()), len(stdTx.GetSignatures()))
@@ -178,7 +183,7 @@ func (db *Database) SetTx(tx sdk.TxResponse) (uint64, error) {
 		if err != nil {
 			return 0, fmt.Errorf("failed to convert validator public key %s: %s\n", pub, err)
 		}
-		
+
 		accAddress := stdTx.GetSigners()[0].String()
 		if err != nil {
 			return 0, fmt.Errorf("failed to convert account address %s: %s\n", stdTx.GetSigners()[0].String(), err)
@@ -198,13 +203,11 @@ func (db *Database) SetTx(tx sdk.TxResponse) (uint64, error) {
 	err = db.QueryRow(
 		sqlStatement,
 		tx.Timestamp, tx.GasWanted, tx.GasUsed, tx.Height, tx.TxHash, sigs[0].Address, string(eventsBz),
-		string(msgsBz), string(feeBz), string(sigsBz), stdTx.GetMemo(), int64(tx.Code), tx.Codespace, tx.RawLog,
+		string(msgsBz), string(feeBz), string(sigsBz), stdTx.GetMemo(), int64(tx.Code), tx.Codespace, string(logBz),
 	).Scan(&id)
 
-	if (tx.Code == 0) {
-		if err := db.ExportParsedTx(tx, msgsBz); err != nil {
-			return 0, err
-		}
+	if err := db.ExportParsedTx(tx, msgsBz); err != nil {
+		return 0, err
 	}
 
 	return id, err
@@ -233,10 +236,12 @@ func (db *Database) ExportParsedTx(tx sdk.TxResponse, msgsBz []byte) error {
 	})
 
 	for i, msg := range CyberMsgs {
-		if msg.Type == "cyberd/Link" {
-			for _, link := range msg.Value.Links {
-				_, errMsg := db.SetCyberlink(link, msg.Value.Address, tx); if errMsg != nil {
-					log.Error().Err(errMsg).Str("hash", tx.TxHash).Msg("failed to write cyberlink")
+		if tx.Code == 0 {
+			if msg.Type == "cyberd/Link" {
+				for _, link := range msg.Value.Links {
+					_, errMsg := db.SetCyberlink(link, msg.Value.Address, tx); if errMsg != nil {
+						log.Error().Err(errMsg).Str("hash", tx.TxHash).Msg("failed to write cyberlink")
+					}
 				}
 			}
 		}
@@ -277,14 +282,14 @@ func (db *Database) SetMessage(types string, value string, address string, tx sd
 	var id uint64
 
 	sqlStatement := `
-	INSERT INTO message (subject, type, value, timestamp, height, txhash)
-	VALUES ($1, $2, $3, $4, $5, $6)
+	INSERT INTO message (subject, type, value, timestamp, height, txhash, code, codespace)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	RETURNING id;
 	`
 
 	err := db.QueryRow(
 		sqlStatement,
-		address, types, value, tx.Timestamp, tx.Height, tx.TxHash,
+		address, types, value, tx.Timestamp, tx.Height, tx.TxHash, tx.Code, tx.Codespace,
 	).Scan(&id)
 
 	return id, err
