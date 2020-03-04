@@ -170,6 +170,11 @@ func (db *Database) SetTx(tx sdk.TxResponse) (uint64, error) {
 		return 0, fmt.Errorf("failed to JSON encode tx fee: %s", err)
 	}
 
+	logBz, err := cdc.Codec.MarshalJSON(tx.RawLog)
+	if err != nil {
+		return 0, fmt.Errorf("failed to JSON encode tx log: %s", err)
+	}
+
 	// convert Tendermint signatures into a more human-readable format
 	sigs := make([]signature, len(stdTx.GetSignatures()), len(stdTx.GetSignatures()))
 	for i, sig := range stdTx.GetSignatures() {
@@ -197,7 +202,7 @@ func (db *Database) SetTx(tx sdk.TxResponse) (uint64, error) {
 	err = db.QueryRow(
 		sqlStatement,
 		tx.Timestamp, tx.GasWanted, tx.GasUsed, tx.Height, tx.TxHash, sigs[0].Address, string(eventsBz),
-		string(msgsBz), string(feeBz), string(sigsBz), stdTx.GetMemo(), int64(tx.Code)	, tx.Codespace, tx.RawLog,
+		string(msgsBz), string(feeBz), string(sigsBz), stdTx.GetMemo(), int64(tx.Code), tx.Codespace, string(logBz),
 	).Scan(&id)
 
 	if err := db.ExportParsedTx(tx, msgsBz); err != nil {
@@ -231,10 +236,12 @@ func (db *Database) ExportParsedTx(tx sdk.TxResponse, msgsBz []byte) error {
 	})
 
 	for i, msg := range CyberMsgs {
-		if msg.Type == "cyberd/Link" {
-			for _, link := range msg.Value.Links {
-				_, errMsg := db.SetCyberlink(link, msg.Value.Address, tx); if errMsg != nil {
-					log.Error().Err(errMsg).Str("hash", tx.TxHash).Msg("failed to write cyberlink")
+		if tx.Code == 0 {
+			if msg.Type == "cyberd/Link" {
+				for _, link := range msg.Value.Links {
+					_, errMsg := db.SetCyberlink(link, msg.Value.Address, tx); if errMsg != nil {
+						log.Error().Err(errMsg).Str("hash", tx.TxHash).Msg("failed to write cyberlink")
+					}
 				}
 			}
 		} else {
