@@ -1,60 +1,28 @@
-# Juno
+# Сyberindex 
 
-[![Build Status](https://travis-ci.org/fissionlabsio/juno.svg?branch=master)](https://travis-ci.org/fissionlabsio/juno)
-[![Go Report Card](https://goreportcard.com/badge/github.com/fissionlabsio/juno)](https://goreportcard.com/report/github.com/fissionlabsio/juno)
+> for cosmos-SDK v38.33 based networks
 
-> Juno is a Cosmos Hub blockchain data aggregator and exporter that provides the
+> Cyberindex is a cosmos-sdk based blockchain data aggregator and exporter that provides the
 > ability for developers and clients to query for indexed chain data.
 
 ## Table of Contents
 
-  - [Background](#background)
-  - [Install](#install)
+  - [Components](#components)
+  - [Docker](#docker)
   - [Usage](#usage)
   - [Schemas](#schemas)
-  - [Future Improvements](#future-improvements)
-  - [Contributing](#contributing)
-  - [License](#license)
 
-## Background
+## Components
 
-Juno is a Cosmos Hub data aggregator and exporter. In other words, it can be seen
-as an ETL layer atop of the Cosmos Hub. It improves the Hub's data accessibility
-by providing an indexed PostgreSQL database exposing aggregated resources and
-models such as blocks, validators, pre-commits, transactions, and various aspects
-of the governance module. Juno is meant to run with a GraphQL layer on top so that
-it even further eases the ability for developers and downstream clients to answer
-queries such as "what is the average gas cost of a block?" while also allowing
-them to compose more aggregate and complex queries.
+The cyberindex contains 4 services wrapped in docker-compose file:
 
-Juno currently supports the Cosmos SDK [v0.37.4](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.37.4). In addition, Fission Labs publishs a public GraphQL API for `cosmoshub-3` that
-can be found [here](https://gaiaql.fissionlabs.io/).
+- [Juno](https://github.com/fissionlabsio/juno) - Cosmos Hub data aggregator and exporter. In other words, it can be seen
+as an ETL layer atop of the Cosmos Hub.
+- PostgreSQL - as database
+- Hasura - as graphQL engine ontop of them
+- Additional crawlers - special tool for the Game of Links monitors backend. 
 
-## Install
-
-Juno takes a simple configuration. It needs to only know about a PostgreSQL
-database instance and a Tendermint RPC node.
-
-Example:
-
-```toml
-rpc_node = "<rpc-ip/host>:<rpc-port>"
-client_node = "<client-ip/host>:<client-port>"
-
-[database]
-host = "<db-host>"
-port = <db-port>
-name = "<db-name>"
-user = "<db-user>"
-password = "<db-password>"
-ssl_mode = "<ssl-mode>"
-```
-
-To install the binary run `make install`.
-
-**Note**: Requires [Go 1.13+](https://golang.org/dl/)
-
-## Running in docker
+## Docker
 
 - Open and fill `.env` file with all necessary data
 - To install in docker run `make docker`.
@@ -78,11 +46,12 @@ JUNO_SSL_MODE=disable
 JUNO_WORKERS=6
 RPC_URL=http://localhost:26657
 LCD_URL=http://localhost:1317
+FQDN_RPC_URL=<cyberd_fqdn_http/https_rpc>
 ```
 
 ## Usage
 
-Juno internally runs a single worker that consumes from a single queue. The
+Juno as part of cyberindex internally runs a single worker that consumes from a single queue. The
 queue contains block heights to aggregate and export to a PostgreSQL database.
 Juno will start a new block even listener where for each new block, it will
 enqueue the height. A worker listens for new heights and queries for various data
@@ -103,21 +72,3 @@ The schema definitions are contained in the `schema/` directory. Note, these
 schemas are not necessarily optimal and are subject to change! However, feel
 free to fork this tool and expand upon the schemas as you see fit. Any tweaks
 will most likely require adjustments to the `database` wrapper.
-
-## Future Improvements
-
-- Unit and integration tests
-- Persist governance proposals and tallies
-- Improve the db migration process
-- Implement better retry logic on failed queries
-- Implement a docker-compose setup that allows for complete bootstrapping
-- Improve modularity and remove any assumptions about the origin chain so Juno
-can sync with any Tendermint-based chain
-
-## Contributing
-
-Contributions are welcome! Please open an Issues or Pull Request for any changes.
-
-## License
-
-[CCC0 1.0 Universal](https://creativecommons.org/share-your-work/public-domain/cc0/)
