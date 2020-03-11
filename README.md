@@ -2,6 +2,7 @@
 
 >  - for cosmos-SDK v37.23 based networks go to [37-23](https://github.com/cybercongress/cyberindex/tree/cybergraph-37-32) branch
 > - for cosmos-SDK v38.33 based networks go to [38-33](https://github.com/cybercongress/cyberindex/tree/cybergraph-38-33) branch
+
 > common releases: [v0.1.37](https://github.com/cybercongress/cyberindex/releases/tag/v0.1.37), [v0.1.38](https://github.com/cybercongress/cyberindex/releases/tag/v0.1.38)
 
 Cyberindex is a cosmos-sdk based blockchain data aggregator and exporter that provides the
