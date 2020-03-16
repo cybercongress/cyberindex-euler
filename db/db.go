@@ -237,7 +237,7 @@ func (db *Database) ExportParsedTx(tx sdk.TxResponse, msgsBz []byte) error {
 
 	for i, msg := range CyberMsgs {
 		if tx.Code == 0 {
-			if msg.Type == "cyberd/Link" {
+			if msg.Type == "cyber/Link" {
 				for _, link := range msg.Value.Links {
 					_, errMsg := db.SetCyberlink(link, msg.Value.Address, tx); if errMsg != nil {
 						log.Error().Err(errMsg).Str("hash", tx.TxHash).Msg("failed to write cyberlink")
