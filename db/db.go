@@ -235,11 +235,22 @@ func (db *Database) ExportParsedTx(tx sdk.TxResponse, msgsBz []byte) error {
 		return true
 	})
 
+	eventsBz, _ := cdc.Codec.MarshalJSON(tx.Logs)
+	strEvents := string(eventsBz)
+	parsedStrEvents := gjson.Parse(strEvents)
+	var rawEvents []string;
+
+	parsedStrEvents.ForEach(func(key, value gjson.Result) bool {
+		rawEvents = append(rawEvents, gjson.Get(value.String(), "events").String())
+		return true
+	})
+
 	for i, msg := range CyberMsgs {
 		if tx.Code == 0 {
 			if msg.Type == "cyber/Link" {
+				karma := gjson.Get(rawEvents[i], `#.attributes.#(key=="karma").value|0`).Uint()/uint64(len(msg.Value.Links))
 				for _, link := range msg.Value.Links {
-					_, errMsg := db.SetCyberlink(link, msg.Value.Address, tx); if errMsg != nil {
+					_, errMsg := db.SetCyberlink(link, msg.Value.Address, tx, karma); if errMsg != nil {
 						log.Error().Err(errMsg).Str("hash", tx.TxHash).Msg("failed to write cyberlink")
 					}
 				}
@@ -254,18 +265,18 @@ func (db *Database) ExportParsedTx(tx sdk.TxResponse, msgsBz []byte) error {
 	return nil
 }
 
-func (db *Database) SetCyberlink(link link.Link, address sdk.AccAddress, tx sdk.TxResponse) (uint64, error) {
+func (db *Database) SetCyberlink(link link.Link, address sdk.AccAddress, tx sdk.TxResponse, karma uint64) (uint64, error) {
 	var id uint64
 
 	sqlStatement := `
-	INSERT INTO cyberlink (object_from, object_to, subject, timestamp, height, txhash)
-	VALUES ($1, $2, $3, $4, $5, $6)
+	INSERT INTO cyberlink (object_from, object_to, subject, timestamp, height, txhash, karma)
+	VALUES ($1, $2, $3, $4, $5, $6, $7)
 	RETURNING id;
 	`
 
 	err := db.QueryRow(
 		sqlStatement,
-		link.From, link.To, address.String(), tx.Timestamp, tx.Height, tx.TxHash,
+		link.From, link.To, address.String(), tx.Timestamp, tx.Height, tx.TxHash, karma,
 	).Scan(&id)
 
 	_, errMsg := db.SetObject(link.To, address, tx); if errMsg != nil {
