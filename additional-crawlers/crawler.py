@@ -21,7 +21,7 @@ def get_connection():
 
 def save_state(connection, cursor):
     def f(block):
-        save_price(cursor, block)
+        # save_price(cursor, block)
         save_relevance(cursor, block)
         connection.commit()
     return f
