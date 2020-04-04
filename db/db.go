@@ -392,7 +392,7 @@ func (db *Database) ExportPreCommits(commit *tmtypes.Commit, vals *tmctypes.Resu
 		if val == nil {
 			err := fmt.Errorf("failed to find validator by address %s for block %d", valAddr, commit.Height)
 			log.Error().Msg(err.Error())
-			return err
+			return nil
 		}
 
 		if err := db.ExportValidator(val); err != nil {
