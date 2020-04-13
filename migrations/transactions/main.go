@@ -8,6 +8,7 @@ import (
 	"github.com/cybercongress/cyberindex/client"
 	"github.com/cybercongress/cyberindex/config"
 	"github.com/cybercongress/cyberindex/db"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/pkg/errors"
 )
 
@@ -51,10 +52,17 @@ func main() {
 		for _, tmTx := range block.Block.Txs {
 			txHash := fmt.Sprintf("%X", tmTx.Hash())
 
-			tx, err := cp.Tx(txHash)
-			if err != nil {
-				log.Printf("failed to get tx %s: %s", txHash, err)
-				continue
+			for {
+				tx, err := cp.Tx(txHash)
+				if err != nil {
+					log.Printf("failed to get tx %s: %s", txHash, err)
+					continue
+				}
+				_, ok := tx.Tx.(auth.StdTx)
+				if ok {
+					break
+				}
+				log.Printf("repeating transaction: %s\n", txHash)
 			}
 
 			if i%10 == 0 {
