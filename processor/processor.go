@@ -73,7 +73,7 @@ func (w Worker) process(height int64) error {
 		return err
 	}
 
-	if err := w.db.ExportPreCommits(block.Block.LastCommit, vals); err != nil {
+	if err := w.db.ExportPreCommits(block.Block.LastCommit, block.Block.LastCommit.Height, vals); err != nil {
 		return err
 	}
 

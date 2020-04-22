@@ -96,18 +96,18 @@ func (db *Database) SetValidator(addr, pk string) error {
 
 // SetPreCommit stores a validator's pre-commit and returns the resulting record
 // ID. An error is returned if the operation fails.
-func (db *Database) SetPreCommit(pc tmtypes.CommitSig, vp, pp int64) (uint64, error) {
+func (db *Database) SetPreCommit(pc tmtypes.CommitSig, vp, pp int64, height int64) (uint64, error) {
 	var id uint64
 
 	sqlStatement := `
-	INSERT INTO pre_commit (validator_address, timestamp, voting_power, proposer_priority)
-	VALUES ($1, $2, $3, $4)
+	INSERT INTO pre_commit (validator_address, timestamp, voting_power, proposer_priority, height)
+	VALUES ($1, $2, $3, $4, $5)
 	RETURNING id;
 	`
 
 	err := db.QueryRow(
 		sqlStatement,
-		pc.ValidatorAddress.String(), pc.Timestamp, vp, pp,
+		pc.ValidatorAddress.String(), pc.Timestamp, vp, pp, height,
 	).Scan(&id)
 
 	return id, err
@@ -383,7 +383,7 @@ func (db *Database) ExportValidator(val *tmtypes.Validator) error {
 // ExportPreCommits accepts a block commitment and a coressponding set of
 // validators for the commitment and persists them to the database. An error is
 // returned if any write fails or if there is any missing aggregated data.
-func (db *Database) ExportPreCommits(commit *tmtypes.Commit, vals *tmctypes.ResultValidators) error {
+func (db *Database) ExportPreCommits(commit *tmtypes.Commit, height int64, vals *tmctypes.ResultValidators) error {
 	// persist all validators and pre-commits
 	for _, pc := range commit.Signatures {
 		valAddr := pc.ValidatorAddress.String()
@@ -399,7 +399,7 @@ func (db *Database) ExportPreCommits(commit *tmtypes.Commit, vals *tmctypes.Resu
 			return err
 		}
 
-		if _, err := db.SetPreCommit(pc, val.VotingPower, val.ProposerPriority); err != nil {
+		if _, err := db.SetPreCommit(pc, val.VotingPower, val.ProposerPriority, height); err != nil {
 			log.Error().Err(err).Str("validator", valAddr).Msg("failed to persist validator pre-commit")
 			return err
 		}
