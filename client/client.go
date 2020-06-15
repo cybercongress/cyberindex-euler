@@ -11,23 +11,42 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	cdc "github.com/cybercongress/cyberindex/codec"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	libclient "github.com/tendermint/tendermint/rpc/lib/client"
+
+	cdc "github.com/cybercongress/cyberindex/codec"
 )
+
+var clientTimeout = 5 * time.Second
 
 // ClientProxy implements a wrapper around both a Tendermint RPC client and a
 // Cosmos SDK REST client that allows for essential data queries.
 type ClientProxy struct {
-	rpcClient  rpcclient.Client // Tendermint RPC node
-	clientNode string           // Full node
+	rpcClient  rpcclient.Client // Tendermint (RPC client) node
+	clientNode string           // Full (REST client) node
 	cdc        *codec.Codec
 }
 
-func New(rpcNode, clientNode string) (ClientProxy, error) {
-	rpcClient, _ := rpcclient.NewHTTP(rpcNode, "/websocket")
+func newRPCClient(remote string) (*rpcclient.HTTP, error) {
+	httpClient, err := libclient.DefaultHTTPClient(remote); if err != nil {
+		return nil, err
+	}
+	httpClient.Timeout = clientTimeout
+	rpcClient, err := rpcclient.NewHTTPWithClient(remote, "/websocket", httpClient); if err != nil {
+		return nil, err
+	}
 
 	if err := rpcClient.Start(); err != nil {
+		return nil, err
+	}
+
+	return rpcClient, nil
+}
+
+func New(rpcNode, clientNode string) (ClientProxy, error) {
+	rpcClient, err := newRPCClient(rpcNode)
+	if err != nil {
 		return ClientProxy{}, err
 	}
 
