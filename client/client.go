@@ -18,7 +18,7 @@ import (
 	cdc "github.com/cybercongress/cyberindex/codec"
 )
 
-var clientTimeout = 5 * time.Second
+var clientTimeout = 10 * time.Second
 
 // ClientProxy implements a wrapper around both a Tendermint RPC client and a
 // Cosmos SDK REST client that allows for essential data queries.

@@ -1,6 +1,8 @@
 package processor
 
 import (
+	"time"
+
 	"github.com/rs/zerolog/log"
 
 	"github.com/cybercongress/cyberindex/client"
@@ -32,13 +34,14 @@ func NewWorker(db *db.Database, cp client.ClientProxy, q Queue) Worker {
 // given worker queue. Any failed job is logged and re-enqueued.
 func (w Worker) Start() {
 	for i := range w.queue {
-		log.Info().Int64("height", i).Msg("processing block")
+		log.Info().Int64("height", i).Msg("[Worker] processing block")
 
 		if err := w.process(i); err != nil {
 			// re-enqueue any failed job
 			// TODO: Implement exponential backoff or max retries for a block height.
+			time.Sleep(10000*time.Millisecond)
 			go func() {
-				log.Info().Int64("height", i).Msg("re-enqueueing failed block")
+				log.Info().Int64("height", i).Msg("[Worker] re-enqueueing failed block")
 				w.queue <- i
 			}()
 		}
@@ -49,27 +52,32 @@ func (w Worker) Start() {
 // height and associated metadata and export it to a database. It returns an
 // error if any export process fails.
 func (w Worker) process(height int64) error {
+	log.Info().Int64("height", height).Msg("[Worker]")
 	ok, err := w.db.HasBlock(height)
 	if ok && err == nil {
-		log.Debug().Int64("height", height).Msg("skipping already exported block")
+		log.Debug().Int64("height", height).Msg("[Worker] skipping already exported block")
 		return nil
 	}
 
 	block, err := w.cp.Block(height)
+	if (block == nil || block.Block.ProposerAddress.String() == "") {
+		log.Info().Int64("height", height).Msg("[Worker] re-enqueueing failed block because of proposer missing")
+		return err
+	}
 	if err != nil {
-		log.Info().Err(err).Int64("height", height).Msg("failed to get block")
+		log.Info().Err(err).Int64("height", height).Msg("[Worker] failed to get block")
 		return err
 	}
 
 	txs, err := w.cp.Txs(block)
 	if err != nil {
-		log.Info().Err(err).Int64("height", height).Msg("failed to get transactions for block")
+		log.Info().Err(err).Int64("height", height).Msg("[Worker] failed to get transactions for block")
 		return err
 	}
 
 	vals, err := w.cp.Validators(block.Block.LastCommit.Height, 0, 100) // TODO upgrade to take all
 	if err != nil {
-		log.Info().Err(err).Int64("height", height).Msg("failed to get validators for block")
+		log.Info().Err(err).Int64("height", height).Msg("[Worker] failed to get validators for block")
 		return err
 	}
 

@@ -251,14 +251,14 @@ func (db *Database) ExportParsedTx(tx sdk.TxResponse, msgsBz []byte) error {
 				karma := gjson.Get(rawEvents[i], `#.attributes.#(key=="karma").value|0`).Uint()/uint64(len(msg.Value.Links))
 				for _, link := range msg.Value.Links {
 					_, errMsg := db.SetCyberlink(link, msg.Value.Address, tx, karma); if errMsg != nil {
-						log.Error().Err(errMsg).Str("hash", tx.TxHash).Msg("failed to write cyberlink")
+						log.Error().Err(errMsg).Str("hash", tx.TxHash).Msg("[ExportParsedTx] failed to write cyberlink")
 					}
 				}
 			}
 		}
 		accAddress := stdTx.GetSigners()[0].String()
 		_, errMsg := db.SetMessage(msg.Type, rawMsgs[i], accAddress, tx); if errMsg != nil {
-			log.Error().Err(errMsg).Str("hash", tx.TxHash).Msg("failed to write message")
+			log.Error().Err(errMsg).Str("hash", tx.TxHash).Msg("[ExportParsedTx] failed to write message")
 		}
 	}
 
@@ -280,10 +280,10 @@ func (db *Database) SetCyberlink(link link.Link, address sdk.AccAddress, tx sdk.
 	).Scan(&id)
 
 	_, errMsg := db.SetObject(link.To, address, tx); if errMsg != nil {
-		log.Error().Err(errMsg).Str("hash", tx.TxHash).Msg("failed to write object")
+		log.Error().Err(errMsg).Str("hash", tx.TxHash).Msg("[SetCyberlink] failed to write object")
 	}
 	_, errMsg = db.SetObject(link.From, address, tx); if errMsg != nil {
-		log.Error().Err(errMsg).Str("hash", tx.TxHash).Msg("failed to write object")
+		log.Error().Err(errMsg).Str("hash", tx.TxHash).Msg("[SetCyberlink] failed to write object")
 	}
 
 	return id, err
@@ -337,7 +337,7 @@ func (db *Database) ExportBlock(b *tmctypes.ResultBlock, txs []sdk.TxResponse, v
 	val := findValidatorByAddr(proposerAddr, vals)
 	if val == nil {
 		err := fmt.Errorf("failed to find validator by address %s for block %d", proposerAddr, b.Block.Height)
-		log.Error().Str("validator", proposerAddr).Int64("height", b.Block.Height).Msg("failed to find validator by address")
+		log.Error().Str("validator", proposerAddr).Int64("height", b.Block.Height).Msg("[ExportBlock] failed to find validator by address")
 		return err
 	}
 
@@ -346,13 +346,13 @@ func (db *Database) ExportBlock(b *tmctypes.ResultBlock, txs []sdk.TxResponse, v
 	}
 
 	if _, err := db.SetBlock(b, totalGas, preCommits); err != nil {
-		log.Error().Err(err).Int64("height", b.Block.Height).Msg("failed to persist block")
+		log.Error().Err(err).Int64("height", b.Block.Height).Msg("[ExportBlock] failed to persist block")
 		return err
 	}
 
 	for _, tx := range txs {
 		if _, err := db.SetTx(tx); err != nil {
-			log.Error().Err(err).Int64("height", b.Block.Height).Str("hash", tx.TxHash).Msg("failed to persist transaction")
+			log.Error().Err(err).Int64("height", b.Block.Height).Str("hash", tx.TxHash).Msg("[ExportBlock] failed to persist transaction")
 			return err
 		}
 	}
@@ -368,12 +368,12 @@ func (db *Database) ExportValidator(val *tmtypes.Validator) error {
 
 	consPubKey, err := sdk.Bech32ifyPubKey(sdk.Bech32PubKeyTypeConsPub,val.PubKey) // nolint: typecheck
 	if err != nil {
-		log.Error().Err(err).Str("validator", valAddr).Msg("failed to convert validator public key")
+		log.Error().Err(err).Str("validator", valAddr).Msg("[ExportValidator] failed to convert validator public key")
 		return err
 	}
 
 	if err := db.SetValidator(valAddr, consPubKey); err != nil {
-		log.Error().Err(err).Str("validator", valAddr).Msg("failed to persist validator")
+		log.Error().Err(err).Str("validator", valAddr).Msg("[ExportValidator] failed to persist validator")
 		return err
 	}
 
@@ -390,7 +390,7 @@ func (db *Database) ExportPreCommits(commit *tmtypes.Commit, height int64, vals 
 
 		val := findValidatorByAddr(valAddr, vals)
 		if val == nil {
-			err := fmt.Errorf("failed to find validator by address %s for block %d", valAddr, commit.Height)
+			err := fmt.Errorf("[ExportPreCommits] failed to find validator by address %s for block %d", valAddr, commit.Height)
 			log.Error().Msg(err.Error())
 			return nil
 		}
@@ -400,7 +400,7 @@ func (db *Database) ExportPreCommits(commit *tmtypes.Commit, height int64, vals 
 		}
 
 		if _, err := db.SetPreCommit(pc, val.VotingPower, val.ProposerPriority, height); err != nil {
-			log.Error().Err(err).Str("validator", valAddr).Msg("failed to persist validator pre-commit")
+			log.Error().Err(err).Str("validator", valAddr).Msg("[ExportPreCommits] failed to persist validator pre-commit")
 			return err
 		}
 	}
