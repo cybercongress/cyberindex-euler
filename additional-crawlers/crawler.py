@@ -1,10 +1,7 @@
-import requests
 import asyncio
-from time import sleep
 import psycopg2
 
 from config import *
-from bandwidth import save_price
 from relevance import save_relevance
 from subscription import subscribe_block
 
@@ -21,7 +18,6 @@ def get_connection():
 
 def save_state(connection, cursor):
     def f(block):
-        # save_price(cursor, block)
         save_relevance(cursor, block)
         connection.commit()
     return f
