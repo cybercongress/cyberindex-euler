@@ -58,4 +58,7 @@ async def subscribe_block(uri, save_state):
             block = data["block_aggregate"]["aggregate"]["max"]["height"]
             if not block:
                 block = 0
-            save_state(block)
+            if block%10 == 0:
+                save_state(block)
+            else:
+                pass
