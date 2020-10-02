@@ -1,51 +1,121 @@
-CREATE VIEW linkage_view AS (
-    SELECT object, subject, MIN(height) AS height, MIN(timestamp) AS timestamp
-    FROM (
-        SELECT object_to AS object, subject, MIN(height) AS height, MIN(timestamp) AS timestamp
-        FROM cyberlink
-        GROUP BY object_to, subject
-        
-        UNION
-        
-        SELECT object_from AS object, subject, MIN(height) AS height, MIN(timestamp) AS timestamp
-        FROM cyberlink
-        GROUP BY object_from, subject
-    ) AS merged_linkage
-    GROUP BY object, subject
-);
-
-CREATE VIEW rewards_view AS (
-    WITH top_objects AS (
-        SELECT object, height, rank
+CREATE MATERIALIZED VIEW top_1000 AS (
+SELECT
+    rel.object,
+    rel.rank,
+    link.subject,
+    link."timestamp",
+    link.height
+FROM (
+        SELECT object, rank
         FROM relevance
-    ), linked_subjects AS (
-        SELECT * 
-        FROM (
-            SELECT subject, height, object, RANK () OVER ( 
-              PARTITION BY object
-              ORDER BY timestamp
-            ) order_number
-            FROM linkage_view
-        ) AS tmp
-        WHERE order_number <= 10
+        WHERE height = (SELECT MAX(height)
+                FROM relevance)
+    ) rel
+LEFT JOIN
+    (
+        SELECT
+            cyberlink.subject,
+            cyberlink.object_from AS object,
+            min(cyberlink.height) AS height,
+            min(cyberlink."timestamp") AS "timestamp"
+        FROM
+            cyberlink
+        GROUP BY
+            cyberlink.object_from,
+            cyberlink.subject
+        UNION
+        SELECT
+            cyberlink.subject,
+            cyberlink.object_to AS object,
+            min(cyberlink.height) AS height,
+            min(cyberlink."timestamp") AS "timestamp"
+        FROM
+            cyberlink
+        GROUP BY
+            cyberlink.object_to,
+            cyberlink.subject
+    ) link
+ON (
+        rel.object = link.object
     )
-    SELECT 
-        linked_subjects.subject, 
-        top_objects.object, 
-        top_objects.height AS block, 
-        linked_subjects.height AS test_block,
-        top_objects.rank, 
-        linked_subjects.order_number
-    FROM top_objects, linked_subjects
-    WHERE top_objects.object = linked_subjects.object
-    AND linked_subjects.height <= top_objects.height
-);
-
-
-CREATE VIEW linkages_view AS (
-    SELECT linkage_view.object, relevance.height, count(*) AS linkages
-    FROM linkage_view, relevance
-    WHERE linkage_view.object = relevance.object
-    AND linkage_view.height <= relevance.height
-    GROUP BY linkage_view.object, relevance.height
 )
+
+CREATE MATERIALIZED VIEW top_stats AS (
+SELECT top_1000.object, top_1000."rank", top_1000.subject, top_1000."timestamp", top_1000.height, top_1000.object, cnt.cnt,
+RANK() OVER(
+    PARTITION BY top_1000.object
+    ORDER BY top_1000."timestamp"
+    ) AS order_number
+FROM top_1000
+LEFT JOIN
+    (
+        SELECT top_1000.object, COUNT(top_1000.object) as cnt
+        FROM top_1000
+        GROUP BY top_1000.object
+    ) cnt
+ON (
+        top_1000.object = cnt.object
+    )
+WHERE cnt.cnt <= 10
+ORDER BY top_1000."rank" DESC, top_1000."timestamp" ASC
+)
+
+CREATE MATERIALIZED VIEW rewards_view AS ()
+SELECT
+    *,
+    case
+        when top_stats.cnt = 1 then top_stats."rank"/(SELECT SUM(SQ."rank") FROM (SELECT DISTINCT top_stats.object, top_stats."rank" FROM top_stats) SQ) / top_stats.order_number
+        when top_stats.cnt = 2 then top_stats."rank"/(SELECT SUM(SQ."rank") FROM (SELECT DISTINCT top_stats.object, top_stats."rank" FROM top_stats) SQ) / (top_stats.order_number * 1.5)
+        when top_stats.cnt = 3 then top_stats."rank"/(SELECT SUM(SQ."rank") FROM (SELECT DISTINCT top_stats.object, top_stats."rank" FROM top_stats) SQ) / (top_stats.order_number * 1.83333333)
+        when top_stats.cnt = 4 then top_stats."rank"/(SELECT SUM(SQ."rank") FROM (SELECT DISTINCT top_stats.object, top_stats."rank" FROM top_stats) SQ) / (top_stats.order_number * 2.08333333)
+        when top_stats.cnt = 5 then top_stats."rank"/(SELECT SUM(SQ."rank") FROM (SELECT DISTINCT top_stats.object, top_stats."rank" FROM top_stats) SQ) / (top_stats.order_number * 2.28333333)
+        when top_stats.cnt = 6 then top_stats."rank"/(SELECT SUM(SQ."rank") FROM (SELECT DISTINCT top_stats.object, top_stats."rank" FROM top_stats) SQ) / (top_stats.order_number * 2.45)
+        when top_stats.cnt = 7 then top_stats."rank"/(SELECT SUM(SQ."rank") FROM (SELECT DISTINCT top_stats.object, top_stats."rank" FROM top_stats) SQ) / (top_stats.order_number * 2.59285714)
+        when top_stats.cnt = 8 then top_stats."rank"/(SELECT SUM(SQ."rank") FROM (SELECT DISTINCT top_stats.object, top_stats."rank" FROM top_stats) SQ) / (top_stats.order_number * 2.71785714)
+        when top_stats.cnt = 9 then top_stats."rank"/(SELECT SUM(SQ."rank") FROM (SELECT DISTINCT top_stats.object, top_stats."rank" FROM top_stats) SQ) / (top_stats.order_number * 2.82896825)
+        when top_stats.cnt = 10 then top_stats."rank"/(SELECT SUM(SQ."rank") FROM (SELECT DISTINCT top_stats.object, top_stats."rank" FROM top_stats) SQ) / (top_stats.order_number * 2.92896825)
+    end as share
+FROM top_stats
+)
+
+CREATE OR REPLACE FUNCTION refresh_top_1000()
+RETURNS TRIGGER LANGUAGE plpgsql
+AS $$
+BEGIN
+REFRESH MATERIALIZED VIEW CONCURRENTLY top_1000;
+RETURN NULL;
+END $$;
+
+CREATE OR REPLACE FUNCTION refresh_top_stats()
+RETURNS TRIGGER LANGUAGE plpgsql
+AS $$
+BEGIN
+REFRESH MATERIALIZED VIEW CONCURRENTLY top_stats;
+RETURN NULL;
+END $$;
+
+CREATE OR REPLACE FUNCTION refresh_rewards_view()
+RETURNS TRIGGER LANGUAGE plpgsql
+AS $$
+BEGIN
+REFRESH MATERIALIZED VIEW CONCURRENTLY rewards_view;
+RETURN NULL;
+END $$;
+
+CREATE TRIGGER refresh_top_1000
+AFTER INSERT OR UPDATE OR DELETE OR TRUNCATE
+ON relevance
+FOR EACH STATEMENT
+EXECUTE PROCEDURE refresh_top_1000();
+
+CREATE TRIGGER refresh_top_stats
+AFTER INSERT OR UPDATE OR DELETE OR TRUNCATE
+ON top_1000
+FOR EACH STATEMENT
+EXECUTE PROCEDURE refresh_top_stats();
+
+CREATE TRIGGER rewards_view
+AFTER INSERT OR UPDATE OR DELETE OR TRUNCATE
+ON top_stats
+FOR EACH STATEMENT
+EXECUTE PROCEDURE refresh_rewards_view();
