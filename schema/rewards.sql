@@ -41,7 +41,7 @@ ON (
 );
 
 CREATE MATERIALIZED VIEW top_stats AS (
-SELECT top_1000.object, top_1000."rank", top_1000.subject, top_1000."timestamp", top_1000.height, top_1000.object, cnt.cnt,
+SELECT top_1000.object, top_1000."rank", top_1000.subject, top_1000."timestamp", top_1000.height, cnt.cnt,
 RANK() OVER(
     PARTITION BY top_1000.object
     ORDER BY top_1000."timestamp"
