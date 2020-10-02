@@ -38,7 +38,7 @@ LEFT JOIN
 ON (
         rel.object = link.object
     )
-)
+);
 
 CREATE MATERIALIZED VIEW top_stats AS (
 SELECT top_1000.object, top_1000."rank", top_1000.subject, top_1000."timestamp", top_1000.height, top_1000.object, cnt.cnt,
@@ -58,11 +58,10 @@ ON (
     )
 WHERE cnt.cnt <= 10
 ORDER BY top_1000."rank" DESC, top_1000."timestamp" ASC
-)
+);
 
-CREATE MATERIALIZED VIEW rewards_view AS ()
-SELECT
-    *,
+CREATE MATERIALIZED VIEW rewards_view AS (
+SELECT *,
     case
         when top_stats.cnt = 1 then top_stats."rank"/(SELECT SUM(SQ."rank") FROM (SELECT DISTINCT top_stats.object, top_stats."rank" FROM top_stats) SQ) / top_stats.order_number
         when top_stats.cnt = 2 then top_stats."rank"/(SELECT SUM(SQ."rank") FROM (SELECT DISTINCT top_stats.object, top_stats."rank" FROM top_stats) SQ) / (top_stats.order_number * 1.5)
@@ -76,7 +75,7 @@ SELECT
         when top_stats.cnt = 10 then top_stats."rank"/(SELECT SUM(SQ."rank") FROM (SELECT DISTINCT top_stats.object, top_stats."rank" FROM top_stats) SQ) / (top_stats.order_number * 2.92896825)
     end as share
 FROM top_stats
-)
+);
 
 CREATE OR REPLACE FUNCTION refresh_top_1000()
 RETURNS TRIGGER LANGUAGE plpgsql
