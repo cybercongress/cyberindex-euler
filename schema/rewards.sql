@@ -67,8 +67,8 @@ ORDER BY top_1000."rank" DESC, top_1000."timestamp" ASC
 CREATE UNIQUE INDEX tsid
   ON top_stats (tsid);
 
-CREATE MATERIALIZED VIEW rewards_view AS (
-SELECT row_number() OVER (PARTITION BY true) as rvid, object, "rank", subject, cnt, order_naumber
+CREATE VIEW rewards_view AS (
+SELECT *,
     case
         when top_stats.cnt = 1 then top_stats."rank"/(SELECT SUM(SQ."rank") FROM (SELECT DISTINCT top_stats.object, top_stats."rank" FROM top_stats) SQ) / top_stats.order_number
         when top_stats.cnt = 2 then top_stats."rank"/(SELECT SUM(SQ."rank") FROM (SELECT DISTINCT top_stats.object, top_stats."rank" FROM top_stats) SQ) / (top_stats.order_number * 1.5)
@@ -83,9 +83,6 @@ SELECT row_number() OVER (PARTITION BY true) as rvid, object, "rank", subject, c
     end as share
 FROM top_stats
 );
-
-CREATE UNIQUE INDEX rvid
-  ON rewards_view (rvid);
 
 CREATE OR REPLACE FUNCTION refresh_top_1000()
 RETURNS TRIGGER LANGUAGE plpgsql
@@ -103,14 +100,6 @@ REFRESH MATERIALIZED VIEW CONCURRENTLY top_stats;
 RETURN NULL;
 END $$;
 
-CREATE OR REPLACE FUNCTION refresh_rewards_view()
-RETURNS TRIGGER LANGUAGE plpgsql
-AS $$
-BEGIN
-REFRESH MATERIALIZED VIEW CONCURRENTLY rewards_view;
-RETURN NULL;
-END $$;
-
 CREATE TRIGGER refresh_top_1000
 AFTER INSERT OR UPDATE OR DELETE OR TRUNCATE
 ON relevance
@@ -122,9 +111,3 @@ AFTER INSERT OR UPDATE OR DELETE OR TRUNCATE
 ON relevance
 FOR EACH STATEMENT
 EXECUTE PROCEDURE refresh_top_stats();
-
-CREATE TRIGGER rewards_view
-AFTER INSERT OR UPDATE OR DELETE OR TRUNCATE
-ON relevance
-FOR EACH STATEMENT
-EXECUTE PROCEDURE refresh_rewards_view();
