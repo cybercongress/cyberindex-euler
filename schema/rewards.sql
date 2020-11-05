@@ -1,4 +1,4 @@
-CREATE MATERIALIZED VIEW top_1000 AS (
+CREATE VIEW top_1000 AS (
 SELECT
     row_number() OVER (PARTITION BY true) as id,
     rel.object,
@@ -41,10 +41,7 @@ ON (
     )
 );
 
-CREATE UNIQUE INDEX id
-  ON top_1000 (id);
-
-CREATE MATERIALIZED VIEW top_stats AS (
+CREATE VIEW top_stats AS (
 SELECT row_number() OVER (PARTITION BY true) as tsid, top_1000.object, top_1000."rank", top_1000.subject, top_1000."timestamp", top_1000.height, cnt.cnt,
 RANK() OVER(
     PARTITION BY top_1000.object
@@ -64,9 +61,6 @@ WHERE cnt.cnt <= 10
 ORDER BY top_1000."rank" DESC, top_1000."timestamp" ASC
 );
 
-CREATE UNIQUE INDEX tsid
-  ON top_stats (tsid);
-
 CREATE VIEW rewards_view AS (
 SELECT *,
     case
@@ -83,31 +77,3 @@ SELECT *,
     end as share
 FROM top_stats
 );
-
-CREATE OR REPLACE FUNCTION refresh_top_1000()
-RETURNS TRIGGER LANGUAGE plpgsql
-AS $$
-BEGIN
-REFRESH MATERIALIZED VIEW CONCURRENTLY top_1000;
-RETURN NULL;
-END $$;
-
-CREATE OR REPLACE FUNCTION refresh_top_stats()
-RETURNS TRIGGER LANGUAGE plpgsql
-AS $$
-BEGIN
-REFRESH MATERIALIZED VIEW CONCURRENTLY top_stats;
-RETURN NULL;
-END $$;
-
-CREATE TRIGGER refresh_top_1000
-AFTER INSERT OR UPDATE OR DELETE OR TRUNCATE
-ON relevance
-FOR EACH STATEMENT
-EXECUTE PROCEDURE refresh_top_1000();
-
-CREATE TRIGGER refresh_top_stats
-AFTER INSERT OR UPDATE OR DELETE OR TRUNCATE
-ON relevance
-FOR EACH STATEMENT
-EXECUTE PROCEDURE refresh_top_stats();
