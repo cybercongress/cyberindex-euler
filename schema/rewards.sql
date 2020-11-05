@@ -64,11 +64,11 @@ WHERE cnt.cnt <= 10
 ORDER BY top_1000."rank" DESC, top_1000."timestamp" ASC
 );
 
-CREATE UNIQUE INDEX id
+CREATE UNIQUE INDEX tsid
   ON top_stats (tsid);
 
 CREATE MATERIALIZED VIEW rewards_view AS (
-SELECT *,
+SELECT row_number() OVER (PARTITION BY true) as rvid, object, "rank", subject, cnt, order_naumber
     case
         when top_stats.cnt = 1 then top_stats."rank"/(SELECT SUM(SQ."rank") FROM (SELECT DISTINCT top_stats.object, top_stats."rank" FROM top_stats) SQ) / top_stats.order_number
         when top_stats.cnt = 2 then top_stats."rank"/(SELECT SUM(SQ."rank") FROM (SELECT DISTINCT top_stats.object, top_stats."rank" FROM top_stats) SQ) / (top_stats.order_number * 1.5)
@@ -83,6 +83,9 @@ SELECT *,
     end as share
 FROM top_stats
 );
+
+CREATE UNIQUE INDEX rvid
+  ON rewards_view (rvid);
 
 CREATE OR REPLACE FUNCTION refresh_top_1000()
 RETURNS TRIGGER LANGUAGE plpgsql
