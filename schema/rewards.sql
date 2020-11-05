@@ -1,5 +1,6 @@
 CREATE MATERIALIZED VIEW top_1000 AS (
 SELECT
+    row_number() OVER (PARTITION BY true) as id,
     rel.object,
     rel.rank,
     link.subject,
