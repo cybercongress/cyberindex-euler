@@ -45,7 +45,7 @@ CREATE UNIQUE INDEX id
   ON top_1000 (id);
 
 CREATE MATERIALIZED VIEW top_stats AS (
-SELECT row_number() OVER (PARTITION BY true) as id, top_1000.object, top_1000."rank", top_1000.subject, top_1000."timestamp", top_1000.height, cnt.cnt,
+SELECT row_number() OVER (PARTITION BY true) as tsid, top_1000.object, top_1000."rank", top_1000.subject, top_1000."timestamp", top_1000.height, cnt.cnt,
 RANK() OVER(
     PARTITION BY top_1000.object
     ORDER BY top_1000."timestamp"
@@ -65,7 +65,7 @@ ORDER BY top_1000."rank" DESC, top_1000."timestamp" ASC
 );
 
 CREATE UNIQUE INDEX id
-  ON top_stats (id);
+  ON top_stats (tsid);
 
 CREATE MATERIALIZED VIEW rewards_view AS (
 SELECT *,
