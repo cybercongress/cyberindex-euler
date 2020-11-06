@@ -15,7 +15,7 @@ CREATE VIEW cyberlinks_per_day AS (
     ON(
         day::date = links."date"
     )
-)
+);
 
 CREATE VIEW cyberlinks_total AS (
     SELECT
@@ -34,6 +34,6 @@ CREATE VIEW cyberlinks_total AS (
     ON (
         day::date = cl.date
     )
-)
+);
 
 

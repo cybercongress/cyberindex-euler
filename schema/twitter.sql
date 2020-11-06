@@ -15,7 +15,7 @@ CREATE VIEW tweets_per_day AS (
     ON (
         day::date = tweets."date"
     )
-)
+);
 
 CREATE VIEW tweets_total AS (
     SELECT
@@ -34,5 +34,5 @@ CREATE VIEW tweets_total AS (
     ON (
         day::date = tw.date
     )
-)
+);
 
