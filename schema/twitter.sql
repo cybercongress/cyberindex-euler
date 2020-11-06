@@ -36,3 +36,11 @@ CREATE VIEW tweets_total AS (
     )
 );
 
+CREATE VIEW time_series AS (
+    SELECT
+        day::date as "date"
+    FROM
+    generate_series('2020-04-04', now(), INTERVAL '1 day') day
+);
+
+
