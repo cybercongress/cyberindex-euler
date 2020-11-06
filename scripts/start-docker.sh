@@ -44,6 +44,10 @@ docker exec -ti cyberindex_postgres psql -f /root/schema/rewards.sql -d $POSTGRE
 docker exec -ti cyberindex_postgres psql -f /root/schema/pre_commit_view.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
 docker exec -ti cyberindex_postgres psql -f /root/schema/object.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
 
+docker exec -ti cyberindex_postgres psql -f /root/schema/acc_by_activity.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
+docker exec -ti cyberindex_postgres psql -f /root/schema/twitter.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
+docker exec -ti cyberindex_postgres psql -f /root/schema/cyberlinks.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
+
 docker-compose up -d additional-crawlers 
 
 docker run -d --name cyberindex --network="host" cyberindex:latest
