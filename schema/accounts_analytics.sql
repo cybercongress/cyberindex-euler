@@ -318,8 +318,8 @@ CREATE VIEW new_total AS (
 
 CREATE VIEW unique_per_day AS (
     SELECT
-            "date",
-            COALESCE(tmp.account,0) as account
+        "date",
+        COALESCE(tmp.account,0) as account
     FROM
         time_series
     LEFT JOIN (
@@ -345,20 +345,22 @@ CREATE VIEW unique_per_day AS (
     )
 );
 
-SELECT
-    time_series."date",
-    unq.account,
-    unq.total
-FROM
-    time_series
-LEFT JOIN (
+CREATE VIEW unique_total AS (
     SELECT
-        unique_per_day.date,
-        unique_per_day.account AS account,
-        sum(unique_per_day.account) OVER (ORDER BY unique_per_day.date) AS total
+        time_series."date",
+        unq.account,
+        unq.total
+    FROM
+        time_series
+    LEFT JOIN (
+        SELECT
+            unique_per_day.date,
+            unique_per_day.account AS account,
+            sum(unique_per_day.account) OVER (ORDER BY unique_per_day.date) AS total
         FROM unique_per_day
         ORDER BY unique_per_day.date
-    ) unq
-ON (
-    time_series.date = unq.date
+        ) unq
+    ON (
+        time_series.date = unq.date
+    )
 );

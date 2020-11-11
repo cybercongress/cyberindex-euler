@@ -1,9 +1,8 @@
 CREATE MATERIALIZED VIEW top_1000 AS (
     SELECT
-        row_number() OVER (PARTITION BY true) as id,
-        rel.object,
+        rel.object AS object,
         rel.rank,
-        link.subject,
+        link.subject AS subject,
         link."timestamp",
         link.height
     FROM (
@@ -41,17 +40,23 @@ CREATE MATERIALIZED VIEW top_1000 AS (
         )
 );
 
-CREATE UNIQUE INDEX ON top_1000 (id);
+CREATE UNIQUE INDEX ON top_1000 (
+    object,
+    subject
+);
 
 CREATE VIEW top_stats AS (
-    top_1000.object, top_1000."rank",
-    top_1000.subject, top_1000."timestamp",
-    top_1000.height,
-    cnt.cnt,
-    RANK() OVER(
-        PARTITION BY top_1000.object
-        ORDER BY top_1000."timestamp"
-        ) AS order_number
+    SELECT
+        top_1000.object,
+        top_1000."rank",
+        top_1000.subject,
+        top_1000."timestamp",
+        top_1000.height,
+        cnt.cnt,
+        RANK() OVER(
+            PARTITION BY top_1000.object
+            ORDER BY top_1000."timestamp"
+            ) AS order_number
     FROM top_1000
     LEFT JOIN
         (
@@ -63,7 +68,7 @@ CREATE VIEW top_stats AS (
             top_1000.object = cnt.object
         )
     WHERE cnt.cnt <= 10
-ORDER BY top_1000."rank" DESC, top_1000."timestamp" ASC
+    ORDER BY top_1000."rank" DESC, top_1000."timestamp" ASC
 );
 
 CREATE VIEW rewards_view AS (
