@@ -44,7 +44,7 @@ CREATE VIEW euler4_per_day AS (
     )
 );
 
-CREATE VIEW euler_4_total AS (
+CREATE VIEW euler4_total AS (
     SELECT
         time_series."date",
         eul.euler4,
