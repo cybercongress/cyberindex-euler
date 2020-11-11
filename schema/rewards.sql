@@ -1,4 +1,4 @@
-CREATE VIEW MATERIALIZED top_1000 AS (
+CREATE MATERIALIZED VIEW top_1000 AS (
 SELECT
     row_number() OVER (PARTITION BY true) as id,
     rel.object,
