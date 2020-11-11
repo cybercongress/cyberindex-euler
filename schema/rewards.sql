@@ -1,4 +1,4 @@
-CREATE VIEW top_1000 AS (
+CREATE VIEW MATERIALIZED top_1000 AS (
 SELECT
     row_number() OVER (PARTITION BY true) as id,
     rel.object,
@@ -88,4 +88,18 @@ CREATE VIEW relevance_leaderboard AS (
         subject
     ORDER BY
         share DESC
-)
+);
+
+CREATE OR REPLACE FUNCTION refresh_top_1000()
+RETURNS TRIGGER LANGUAGE plpgsql
+AS $$
+BEGIN
+REFRESH MATERIALIZED VIEW CONCURRENTLY top_1000;
+RETURN NULL;
+END $$;
+
+CREATE TRIGGER refresh_top_1000
+AFTER INSERT OR UPDATE OR DELETE OR TRUNCATE
+ON relevance
+FOR EACH STATEMENT
+EXECUTE PROCEDURE refresh_top_1000();
