@@ -1,63 +1,68 @@
 CREATE MATERIALIZED VIEW top_1000 AS (
-SELECT
-    row_number() OVER (PARTITION BY true) as id,
-    rel.object,
-    rel.rank,
-    link.subject,
-    link."timestamp",
-    link.height
-FROM (
-        SELECT object, rank
-        FROM relevance
-        WHERE height = (SELECT MAX(height)
-                FROM relevance)
-    ) rel
-LEFT JOIN
-    (
-        SELECT
-            cyberlink.subject,
-            cyberlink.object_from AS object,
-            min(cyberlink.height) AS height,
-            min(cyberlink."timestamp") AS "timestamp"
-        FROM
-            cyberlink
-        GROUP BY
-            cyberlink.object_from,
-            cyberlink.subject
-        UNION
-        SELECT
-            cyberlink.subject,
-            cyberlink.object_to AS object,
-            min(cyberlink.height) AS height,
-            min(cyberlink."timestamp") AS "timestamp"
-        FROM
-            cyberlink
-        GROUP BY
-            cyberlink.object_to,
-            cyberlink.subject
-    ) link
-ON (
-        rel.object = link.object
-    )
+    SELECT
+        row_number() OVER (PARTITION BY true) as id,
+        rel.object,
+        rel.rank,
+        link.subject,
+        link."timestamp",
+        link.height
+    FROM (
+            SELECT object, rank
+            FROM relevance
+            WHERE height = (SELECT MAX(height)
+                    FROM relevance)
+        ) rel
+    LEFT JOIN
+        (
+            SELECT
+                cyberlink.subject,
+                cyberlink.object_from AS object,
+                min(cyberlink.height) AS height,
+                min(cyberlink."timestamp") AS "timestamp"
+            FROM
+                cyberlink
+            GROUP BY
+                cyberlink.object_from,
+                cyberlink.subject
+            UNION
+            SELECT
+                cyberlink.subject,
+                cyberlink.object_to AS object,
+                min(cyberlink.height) AS height,
+                min(cyberlink."timestamp") AS "timestamp"
+            FROM
+                cyberlink
+            GROUP BY
+                cyberlink.object_to,
+                cyberlink.subject
+        ) link
+    ON (
+            rel.object = link.object
+        )
 );
 
+CREATE UNIQUE INDEX ON top_1000 (id);
+
 CREATE VIEW top_stats AS (
-SELECT row_number() OVER (PARTITION BY true) as tsid, top_1000.object, top_1000."rank", top_1000.subject, top_1000."timestamp", top_1000.height, cnt.cnt,
-RANK() OVER(
-    PARTITION BY top_1000.object
-    ORDER BY top_1000."timestamp"
-    ) AS order_number
-FROM top_1000
-LEFT JOIN
-    (
-        SELECT top_1000.object, COUNT(top_1000.object) as cnt
-        FROM top_1000
-        GROUP BY top_1000.object
-    ) cnt
-ON (
-        top_1000.object = cnt.object
-    )
-WHERE cnt.cnt <= 10
+    top_1000.object, top_1000."rank",
+    top_1000.subject, top_1000."timestamp",
+    top_1000.height,
+    cnt.cnt,
+    RANK() OVER(
+        PARTITION BY top_1000.object
+        ORDER BY top_1000."timestamp"
+        ) AS order_number
+    FROM top_1000
+    LEFT JOIN
+        (
+            SELECT top_1000.object, COUNT(top_1000.object) as cnt
+            FROM top_1000
+            GROUP BY top_1000.object
+        ) cnt
+    ON (
+            top_1000.object = cnt.object
+        )
+    WHERE cnt.cnt <= 10
 ORDER BY top_1000."rank" DESC, top_1000."timestamp" ASC
 );
 
