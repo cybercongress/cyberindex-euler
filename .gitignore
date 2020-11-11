@@ -21,3 +21,6 @@ __pycache__
 
 .idea
 configuration
+schema/.DS_Store
+
+.DS_Store
