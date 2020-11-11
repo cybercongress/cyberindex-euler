@@ -354,7 +354,7 @@ FROM
 LEFT JOIN (
     SELECT
         unique_per_day.date,
-        unique_per_day.new AS account,
+        unique_per_day.account AS account,
         sum(unique_per_day.account) OVER (ORDER BY unique_per_day.date) AS total
         FROM unique_per_day
         ORDER BY unique_per_day.date
