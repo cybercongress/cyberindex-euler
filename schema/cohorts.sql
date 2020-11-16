@@ -34,7 +34,7 @@ CREATE UNIQUE INDEX ON tx_order (
     ordering
 );
 
-CREATE VIEW cohorts AS (
+CREATE MATERIALIZED VIEW cohorts AS (
     SELECT
         final_result.subject,
         date(final_result.register) AS register,
@@ -81,6 +81,10 @@ CREATE VIEW cohorts AS (
     )
 );
 
+CREATE UNIQUE INDEX ON cohorts (
+    subject
+);
+
 CREATE OR REPLACE FUNCTION refresh_tx_order()
 RETURNS TRIGGER LANGUAGE plpgsql
 AS $$
@@ -94,3 +98,17 @@ AFTER INSERT OR UPDATE OR DELETE OR TRUNCATE
 ON transaction
 FOR EACH STATEMENT
 EXECUTE PROCEDURE refresh_tx_order();
+
+CREATE OR REPLACE FUNCTION refresh_cohorts()
+RETURNS TRIGGER LANGUAGE plpgsql
+AS $$
+BEGIN
+REFRESH MATERIALIZED VIEW CONCURRENTLY cohorts;
+RETURN NULL;
+END $$;
+
+CREATE TRIGGER refresh_cohorts
+AFTER INSERT OR UPDATE OR DELETE OR TRUNCATE
+ON transaction
+FOR EACH STATEMENT
+EXECUTE PROCEDURE refresh_cohorts();
