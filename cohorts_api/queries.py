@@ -1,6 +1,19 @@
 TAG = 'SELECT * FROM cohorts WHERE tag = \'{}\''
 REGISTER_TYPE = 'SELECT * FROM cohorts WHERE register_act_type = \'{}\''
-ACTION_TYPE = 'SELECT * FROM cohorts WHERE first_act_type =\'{}\''
+ACTION_TYPE = 'SELECT \
+    subject, \
+	register, \
+	first_act, \
+	register_act_type, \
+	register_act_month, \
+	diff, \
+	tag, \
+	CASE \
+	    WHEN first_act_type !=\'{}\' THEN NULL \
+	    ELSE first_act_type \
+	END AS first_act_type \
+FROM \
+    cohorts'
 
 TAG_REGISTER_TYPE = 'SELECT * FROM cohorts WHERE tag = \'{}\' AND register_act_type = \'{}\''
 TAG_ACTION_TYPE = 'SELECT \
