@@ -14,6 +14,8 @@ The return of any query to this microservice is json like:
 }
 ```
 
+This data structure-oriented for a [heatmap](https://plotly.com/javascript/heatmaps/) of poltly js library. 
+
 Where `x` is months order from 0 till current, + "Messed" and "Total".
 `y` is month order from April till current in date format. In other words, this is the month of registration.
 `z` is data for filling cohort as a double array mapped with `x` and `y`.
