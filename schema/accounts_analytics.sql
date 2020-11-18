@@ -364,3 +364,99 @@ CREATE VIEW unique_total AS (
         time_series.date = unq.date
     )
 );
+
+CREATE VIEW objects_per_day AS (
+    SELECT
+        time_series."date",
+        COALESCE(obj.objects, 0) AS objects
+    FROM
+        time_series
+    LEFT JOIN (
+        SELECT
+            date(tmp."date") AS "date",
+            count(tmp.object) AS objects
+        FROM (
+            SELECT
+                date("timestamp") AS "date",
+                object,
+                row_number() OVER (
+                PARTITION BY object
+                ORDER BY "timestamp") AS ordering
+            FROM
+                object
+        ) AS tmp
+        WHERE
+            ordering = 1
+        GROUP BY
+            tmp."date"
+        ORDER BY
+            tmp."date"
+    ) AS obj
+    ON (
+        time_series."date" = obj."date"
+    )
+);
+
+CREATE VIEW objects_total AS (
+    SELECT
+        time_series."date",
+        obj.objects,
+        obj.total
+    FROM
+        time_series
+    LEFT JOIN (
+        SELECT
+            objects_per_day.date,
+            objects_per_day.objects AS objects,
+            sum(objects_per_day.objects) OVER (ORDER BY objects_per_day.date) AS total
+        FROM objects_per_day
+        ORDER BY objects_per_day.date
+        ) obj
+    ON (
+        time_series.date = obj.date
+    )
+);
+
+CREATE VIEW txs_per_day AS (
+    SELECT
+        time_series."date",
+        COALESCE(tx.txs, 0) AS txs
+    FROM
+        time_series
+    LEFT JOIN (
+        SELECT
+            date("timestamp") AS "date",
+            count(txhash) AS txs
+        FROM
+            transaction
+        WHERE
+            code = 0
+        GROUP BY
+            "date"
+        ORDER BY
+            "date"
+    ) AS tx
+    ON (
+         time_series."date" = tx."date"
+    )
+);
+
+CREATE VIEW txs_total AS (
+    SELECT
+        time_series."date",
+        txs.txs,
+        txs.total
+    FROM
+        time_series
+    LEFT JOIN (
+        SELECT
+            txs_per_day.date,
+            txs_per_day.txs AS txs,
+            sum(txs_per_day.txs) OVER (ORDER BY txs_per_day.date) AS total
+        FROM txs_per_day
+        ORDER BY txs_per_day.date
+        ) txs
+    ON (
+        time_series.date = txs.date
+    )
+);
