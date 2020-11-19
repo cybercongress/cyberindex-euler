@@ -1,3 +1,5 @@
+CREATE EXTENSION tablefunc;
+
 CREATE MATERIALIZED VIEW tx_order AS (
     SELECT *
     FROM (
