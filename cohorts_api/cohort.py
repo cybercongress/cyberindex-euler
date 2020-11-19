@@ -15,18 +15,29 @@ def set_query(register_source=None, register_type=None, action_type=None):
     elif (not register_source and register_type and not action_type):
         query = REGISTER_TYPE.format(ACTIONS[register_type])
     elif (not register_source and not register_type and action_type):
-        query = ACTION_TYPE.format(ACTIONS[action_type])
+        if action_type in ['stake', 'transfer', 'cyberlink', 'withdraw']:
+            query = ACTION_TYPE.format(ACTIONS[action_type])
+        else:
+            query = ACTION_TYPE_2.format(ACTIONS[action_type])
     # Two categories query
     elif (register_source and register_type and not action_type):
         query = TAG_REGISTER_TYPE.format(register_source, ACTIONS[register_type])
     elif (not register_source and register_type and action_type):
-        query = REGISTER_TYPE_ACTION_TYPE.format(ACTIONS[action_type], ACTIONS[register_type])
+        if action_type in ['stake', 'transfer', 'cyberlink', 'withdraw']:
+            query = REGISTER_TYPE_ACTION_TYPE.format(ACTIONS[action_type], ACTIONS[register_type])
+        else:
+            query = REGISTER_TYPE_ACTION_TYPE_2.format(ACTIONS[action_type], ACTIONS[register_type])
     elif (register_source and not register_type and action_type):
-        query = TAG_ACTION_TYPE.format(ACTIONS[action_type], register_source)
+        if action_type in ['stake', 'transfer', 'cyberlink', 'withdraw']:
+            query = TAG_ACTION_TYPE.format(ACTIONS[action_type], register_source)
+        else:
+            query = TAG_ACTION_TYPE_2.format(ACTIONS[action_type], register_source)
     # Three categories query
     elif (register_source and register_type and action_type):
-        query = TAG_REGISTER_TYPE_ACTION_TYPE.format(ACTIONS[action_type],register_source, ACTIONS[register_type])
-
+        if action_type in ['stake', 'transfer', 'cyberlink', 'withdraw']:
+            query = TAG_REGISTER_TYPE_ACTION_TYPE.format(ACTIONS[action_type],register_source, ACTIONS[register_type])
+        else:
+            query = TAG_REGISTER_TYPE_ACTION_TYPE_2.format(ACTIONS[action_type],register_source, ACTIONS[register_type])
     # No category query
     else:
         query = "select * from cohorts"
@@ -44,17 +55,16 @@ def months_list_df():
 def get_connection():
     return psycopg2.connect(user=DATABASE_USER,
                               password=DATABASE_PASSWORD,
-                              host= DATABASE_HOST,
+                              host=DATABASE_HOST,
                               port=DATABASE_PORT,
                               database=DATABASE_NAME)
 
 def get_table(query, connection):
-    df = pd.read_sql_query(query, connection)
-    df['diff'] = np.where(df.first_act_type.isnull(), -1, df['diff'])
-    df = df.drop(['register_act_type', 'first_act_type', 'tag'], axis=1)
-    return df
+    return pd.read_sql_query(query, connection)
 
 def get_cohort_table(df, months_list_num, months_list):
+    df['diff'] = np.where(df.first_act_type.isnull(), -1, df['diff'])
+    df = df.drop(['register_act_type', 'first_act_type', 'tag'], axis=1, errors='ignore')
     cohort_table = pd.pivot_table(df, values='subject', aggfunc='count', columns='diff', index='register_act_month', fill_value=0).reindex(months_list_num, axis=1, fill_value=0)
     cohort_table = pd.merge(months_list, cohort_table, left_index=True, right_index=True, how='outer').fillna(0)
     cohort_table = cohort_table.rename(columns={-1: "Missed"})
