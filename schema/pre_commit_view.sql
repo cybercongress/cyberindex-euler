@@ -33,7 +33,7 @@ CREATE MATERIALIZED VIEW pre_commit_view AS (
         consensus_pubkey
 );
 
-CREATE UNIQUE INDEX ON old_pre_commits (
+CREATE UNIQUE INDEX ON pre_commit_view (
     consensus_pubkey
 );
 
