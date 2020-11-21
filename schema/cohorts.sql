@@ -12,7 +12,10 @@ CREATE MATERIALIZED VIEW tx_order AS (
           ) AS ordering,
           tmp.txhash,
           tmp."timestamp",
-          tmp.type
+          CASE
+            WHEN tmp.type = 'recieve' OR tmp.type = 'cosmos-sdk/MsgSend' OR tmp.type = 'cosmos-sdk/MsgMultiSend' THEN 'transfer'
+          ELSE tmp.type
+          END AS "type"
         FROM (
             SELECT *
             FROM (
@@ -78,7 +81,7 @@ CREATE MATERIALIZED VIEW tx_order AS (
 );
 
 CREATE UNIQUE INDEX ON tx_order (
-    object,
+    subject,
     ordering
 );
 
@@ -160,39 +163,3 @@ AFTER INSERT OR UPDATE OR DELETE OR TRUNCATE
 ON transaction
 FOR EACH STATEMENT
 EXECUTE PROCEDURE refresh_cohorts();
-
-
-SELECT
-    "timestamp",
-    BTRIM(recipient, '\"') :: char(44) AS subject,
-    txhash,
-    CASE
-        WHEN "type" = 'cosmos-sdk/MsgSend' THEN 'recieve'
-    END AS "type"
-FROM (
-    SELECT
-        "timestamp",
-        subject,
-        recipient,
-        txhash,
-        "type",
-        row_number() OVER (
-            PARTITION BY recipient
-            ORDER BY "timestamp"
-        ) AS ordering
-    FROM (
-        SELECT
-            "timestamp",
-            subject,
-            text(value :: json -> 'to_address') AS recipient,
-            txhash,
-            "type"
-        FROM
-            message
-        WHERE
-            "type" = 'cosmos-sdk/MsgSend' AND
-            code = 0
-    ) tmp
-) tmp
-WHERE ordering = 1
-ORDER BY timestamp

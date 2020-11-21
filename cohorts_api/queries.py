@@ -1,6 +1,6 @@
 ACTIONS = {
     'stake': 'cosmos-sdk/MsgDelegate',
-    'transfer': 'cosmos-sdk/MsgSend',
+    'transfer': 'transfer',
     'cyberlink': 'cyber/Link',
     'withdraw': 'cosmos-sdk/MsgWithdrawDelegationReward',
     'tweet': 'first_tweet',
