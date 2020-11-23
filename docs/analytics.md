@@ -16,7 +16,7 @@ The return of any query to this microservice is json like:
 
 This data structure-oriented for a [heatmap](https://plotly.com/javascript/heatmaps/) of poltly js library. 
 
-Where `x` is months order from 0 till current, + "Messed" and "Total".
+Where `x` is months order from 0 till current, + "Missed" and "Total".
 `y` is month order from April till current in date format. In other words, this is the month of registration.
 `z` is data for filling cohort as a double array mapped with `x` and `y`.
 
@@ -36,29 +36,60 @@ Parametres:
 If `register_source` is not specified API will return all accounts.
 
 ***register_type***. Type of account registration. Will return only accounts with the current type of registration as a parameter.
-Parametres: 
+Parametres:
 - `stake`
 - `transfer`
 - `cyberlink`
-- `euler4`
-- `withdraw`
 If `register_type` is not specified API will return all accounts independent of registration type.
 
-***register_type***. Type of the first account action. Will return only accounts with the current type of the first action as a parameter.
+***action_type***. Type of the first account action. Will return only accounts with the current type of the first action as a parameter.
 Parametres: 
 - `stake`
 - `transfer`
 - `cyberlink`
-- `euler4`
 - `withdraw`
-If register_type is not specified API will return all accounts independent of the first action type.
+- `tweet`
+- `follow`
+- `avatar`
+- `5_follows`
+- `25_follows`
+- `10_cyberlinks`
+- `100_cyberlinks`
 
-Concatenating queries is available with `&` and with order save like `register_source`, `register_type` and `action_type`. 
+If `action_type` is not specified API will return all accounts independent of the first action type.
 
 > Example. Get all accounts from `euler4` gift with type of registration `transfer`.
 
 ```bash
 /register_source=euler4&register_type=transfer
+```
+
+Concatenating queries is available with `&` and with order save like `register_source`, `register_type` and `action_type`.
+
+The intersection of `register_source` and `register_type` pretty easy:
+
+![](./img/source_reg_type.jpg)
+
+But with the `action_type` parameter we should get all addresses by `register_sourse` or `register type` and add accounts by `action_type`:
+
+![](./img/source_act_type.jpg)
+
+![](./img/reg_type_act_type.jpg)
+
+> Example. Get all accounts from `euler4` gift with type of registration `transfer`.
+
+```bash
+/register_source=euler4&register_type=transfer
+```
+
+If 3 parameters are specified we should get the intersection of `register_source` and `register_type` and add accounts by the `action_type`:
+
+![](./img/source_reg_type_act_type.jpg)
+
+> Example. Get all new accounts with type of registration `transfer` and type of the first action `transfer`.
+
+```bash
+/register_source=new&register_type=transfer&action_type=transfer
 ```
 
 If you need cohort data without filters query:
@@ -354,6 +385,8 @@ Tables:
 
 - tweets_total
 - cyberlinks_total
+- objects_total
+- txs_total
 
 ```
 {
