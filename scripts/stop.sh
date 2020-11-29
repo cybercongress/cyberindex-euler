@@ -10,11 +10,15 @@ docker stop cyberindex_hasura
 
 docker stop cyberindex_postgres
 
+docker stop cyberindex_cohorts
+
 docker rm cyberindex
 
 docker rm cyberindex_hasura
 
 docker rm cyberindex_postgres
+
+docker rm cyberindex_cohorts
 
 docker stop cyberindex_additional_crawlers
 
@@ -27,5 +31,7 @@ docker network rm cyberindex_cyberindex-net
 docker image rm cyberindex_additional-crawlers
 
 docker image rm cyberindex
+
+docker image rm cohorts
 
 rm config.toml

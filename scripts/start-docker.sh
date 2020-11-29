@@ -21,6 +21,7 @@ sed -i "/password/a ssl_mode=\"$JUNO_SSL_MODE\"" config.toml
 sudo mv ./postgres /tmp/
 docker build -t cyberindex:latest --build-arg JUNO_WORKERS=$JUNO_WORKERS .
 sudo mv /tmp/postgres ./
+docker build -t cohorts -f cohorts_api/Dockerfile  ./cohorts_api/
 
 # run postgres and hasura in containers
 docker-compose up -d postgres 
