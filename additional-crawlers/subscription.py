@@ -38,7 +38,7 @@ async def receive_data(websocket):
     return response_json["payload"]["data"]
 
 
-async def subscribe_block(uri, save_state):
+async def subscribe_block(uri, save_state, update_views):
     async with websockets.connect(uri, subprotocols=["graphql-ws"]) as websocket:
         height_query = """
             subscription {
@@ -61,6 +61,7 @@ async def subscribe_block(uri, save_state):
                 block = 0
             if block%10 == 0:
                 save_state(block)
+                update_views()
                 print(datetime.now(), 'relevance saved')
             else:
                 pass
