@@ -1,5 +1,6 @@
 DROP MATERIALIZED VIEW IF EXISTS pre_commit_view CASCADE;
 DROP VIEW IF EXISTS pre_commit_view CASCADE;
+DROP TABLE IF EXISTS old_pre_commits CASCADE;
 
 CREATE TABLE old_pre_commits
 (
