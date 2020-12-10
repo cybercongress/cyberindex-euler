@@ -1,12 +1,110 @@
 # Analytics graphQL queries for cyber
 
+## Cohorts
+
+There is a separate API microservice for cohorts data. 
+
+The return of any query to this microservice is json like:
+
+```json
+{
+  "x" : ["string"],
+  "y" : ["date"],
+  "z" : [["data"]]
+}
+```
+
+This data structure-oriented for a [heatmap](https://plotly.com/javascript/heatmaps/) of poltly js library. 
+
+Where `x` is months order from 0 till current, + "Missed" and "Total".
+`y` is month order from April till current in date format. In other words, this is the month of registration.
+`z` is data for filling cohort as a double array mapped with `x` and `y`.
+
+There are three parameters you can use as filters to get data from that microservice:
+
+- `register_source`
+- `register_type`
+- `action_type`
+
+***register_source***. Source of account registration. Will return only accounts with the current source of registration as a parameter.
+Parametres: 
+- `ethereum`
+- `cosmos`
+- `urbit`
+- `euler4`
+- `new`
+If `register_source` is not specified API will return all accounts.
+
+***register_type***. Type of account registration. Will return only accounts with the current type of registration as a parameter.
+Parametres:
+- `stake`
+- `transfer`
+- `cyberlink`
+If `register_type` is not specified API will return all accounts independent of registration type.
+
+***action_type***. Type of the first account action. Will return only accounts with the current type of the first action as a parameter.
+Parametres: 
+- `stake`
+- `transfer`
+- `cyberlink`
+- `withdraw`
+- `tweet`
+- `follow`
+- `avatar`
+- `5_follows`
+- `25_follows`
+- `10_cyberlinks`
+- `100_cyberlinks`
+
+If `action_type` is not specified API will return all accounts independent of the first action type.
+
+> Example. Get all accounts from `euler4` gift with type of registration `transfer`.
+
+```bash
+/register_source=euler4&register_type=transfer
+```
+
+Concatenating queries is available with `&` and with order save like `register_source`, `register_type` and `action_type`.
+
+The intersection of `register_source` and `register_type` pretty easy:
+
+![](./img/source_reg_type.jpg)
+
+But with the `action_type` parameter we should get all addresses by `register_sourse` or `register type` and add accounts by `action_type`:
+
+![](./img/source_act_type.jpg)
+
+![](./img/reg_type_act_type.jpg)
+
+> Example. Get all accounts from `euler4` gift with type of registration `transfer`.
+
+```bash
+/register_source=euler4&register_type=transfer
+```
+
+If 3 parameters are specified we should get the intersection of `register_source` and `register_type` and add accounts by the `action_type`:
+
+![](./img/source_reg_type_act_type.jpg)
+
+> Example. Get all new accounts with type of registration `transfer` and type of the first action `transfer`.
+
+```bash
+/register_source=new&register_type=transfer&action_type=transfer
+```
+
+If you need cohort data without filters query:
+
+```bash
+/cohort_main
+```
+
 ## Accounts by activity table
 
 Tables: 
 
 - accs_by_act
 
-```json
+```
 {
     subject: str, // account address
     first_delegation: date, // date of the first delegation transaction
@@ -26,7 +124,7 @@ Tables:
 
 Get account activity:
 
-```json
+```
 query get_account_activity {
   accs_by_act(where: {subject: {_eq: "cyber1hmkqhy8ygl6tnl5g8tc503rwrmmrkjcq4878e0"}}) {
     cyberlinks
@@ -76,7 +174,7 @@ Get accounts by activity type:
 
 > Example. Get accounts with avatar
 
-```json
+```
 query get_accounts_with_avatar {
   accs_by_act(where: {first_avatar: {_is_null: false}}) {
     subject
@@ -155,7 +253,7 @@ Tables:
 
 for all tables:
 
-```json
+```
 {
     date: date, 
     account: int, // register unique accounts per day
@@ -167,7 +265,7 @@ for all tables:
 
 > Example. Get new accounts from Cosmos gift addresses pool for the last week:
 
-```json
+```
 query get_cosmos_per_day {
   cosmos_total(where: {date: {_gte: "2020-11-03"}}) {
     cosmos
@@ -225,7 +323,7 @@ Output:
 
 > Example. Get new accounts from Cosmos gift addresses pool for the last week accumulated:
 
-```json
+```
 query get_cosmos_per_day_accumulated {
   cosmos_total(where: {date: {_gte: "2020-11-03"}}) {
     total
@@ -236,7 +334,7 @@ query get_cosmos_per_day_accumulated {
 
 Output:
 
-```json
+```
 {
   "data": {
     "cosmos_total": [
@@ -287,8 +385,10 @@ Tables:
 
 - tweets_total
 - cyberlinks_total
+- objects_total
+- txs_total
 
-```json
+```
 {
     date: date, 
     tweets/links: int, // tweets/links per day
@@ -298,7 +398,7 @@ Tables:
 
 > Example. Get tweets per day for the last two weeks
 
-```json
+```
 query tweets_per_day {
   tweets_total(where: {date: {_gte: "2020-10-29"}}) {
     date
@@ -376,7 +476,7 @@ Output:
 
 > Example. Get links per day for the last two weeks accumulated
 
-```json
+```
 query cyberlinks_per_day_acc {
   cyberlinks_total(where: {date: {_gte: "2020-10-29"}}) {
     date

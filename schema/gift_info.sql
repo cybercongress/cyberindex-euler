@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS gift_info CASCADE;
+
 CREATE TABLE gift_info
 (
     subject CHAR(44) NOT NULL UNIQUE PRIMARY KEY,

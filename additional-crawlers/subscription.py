@@ -1,6 +1,7 @@
 import websockets
 import json
 from config import *
+from datetime import datetime
 
 async def init(websocket):
     json_init = json.dumps({
@@ -30,14 +31,14 @@ async def send_query(websocket, query):
 async def receive_data(websocket):
     response_json = {"type": None}
     while response_json["type"] != "data":
-        print("Data received...", response_json)
+        print(datetime.now(), "Data received...", response_json)
         response = await websocket.recv()
         response_json = json.loads(response)
 
     return response_json["payload"]["data"]
 
 
-async def subscribe_block(uri, save_state):
+async def subscribe_block(uri, save_state, update_views):
     async with websockets.connect(uri, subprotocols=["graphql-ws"]) as websocket:
         height_query = """
             subscription {
@@ -60,5 +61,7 @@ async def subscribe_block(uri, save_state):
                 block = 0
             if block%10 == 0:
                 save_state(block)
+                update_views()
+                print(datetime.now(), 'relevance saved')
             else:
                 pass

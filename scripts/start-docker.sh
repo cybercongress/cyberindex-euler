@@ -21,6 +21,7 @@ sed -i "/password/a ssl_mode=\"$JUNO_SSL_MODE\"" config.toml
 sudo mv ./postgres /tmp/
 docker build -t cyberindex:latest --build-arg JUNO_WORKERS=$JUNO_WORKERS .
 sudo mv /tmp/postgres ./
+docker build -t cohorts -f cohorts_api/Dockerfile  ./cohorts_api/
 
 # run postgres and hasura in containers
 docker-compose up -d postgres 
@@ -35,24 +36,22 @@ docker exec -ti cyberindex_postgres psql -f /root/schema/pre_commit.sql -d $POST
 docker exec -ti cyberindex_postgres psql -f /root/schema/block.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
 docker exec -ti cyberindex_postgres psql -f /root/schema/transaction.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
 docker exec -ti cyberindex_postgres psql -f /root/schema/cyberlink.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
-
 docker exec -ti cyberindex_postgres psql -f /root/schema/relevance.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
 docker exec -ti cyberindex_postgres psql -f /root/schema/message.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
+docker exec -ti cyberindex_postgres psql -f /root/schema/object.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
 
 docker exec -ti cyberindex_postgres psql -f /root/schema/karma.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
 docker exec -ti cyberindex_postgres psql -f /root/schema/rewards.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
-docker exec -ti cyberindex_postgres psql -f /root/schema/pre_commit_view.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
-docker exec -ti cyberindex_postgres psql -f /root/schema/object.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
-
 docker exec -ti cyberindex_postgres psql -f /root/schema/acc_by_activity.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
 docker exec -ti cyberindex_postgres psql -f /root/schema/twitter.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
 docker exec -ti cyberindex_postgres psql -f /root/schema/cyberlinks.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
 docker exec -ti cyberindex_postgres psql -f /root/schema/gift_info.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
-
-docker exec -ti cyberindex_postgres psql -c "\copy gift_info FROM /root/schema/gift_info.csv with csv HEADER" $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
-
+docker exec -ti cyberindex_postgres psql -c "\copy gift_info FROM /root/schema/gift_info.csv with csv HEADER" -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
+docker exec -ti cyberindex_postgres psql -f /root/schema/pre_commit_view.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
+docker exec -ti cyberindex_postgres psql -c "\copy old_pre_commits FROM /root/schema/old_pre_commits.csv with csv HEADER" -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
 docker exec -ti cyberindex_postgres psql -f /root/schema/accounts_analytics.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
+# docker exec -ti cyberindex_postgres psql -f /root/schema/cohorts.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
 
-docker-compose up -d additional-crawlers 
+docker-compose up -d additional-crawlers
 
 docker run -d --name cyberindex --network="host" cyberindex:latest

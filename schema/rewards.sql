@@ -1,3 +1,8 @@
+DROP MATERIALIZED VIEW IF EXISTS top_1000 CASCADE;
+DROP VIEW IF EXISTS top_1000 CASCADE;
+DROP TRIGGER IF EXISTS refresh_top_1000 ON relevance;
+DROP FUNCTION IF EXISTS refresh_top_1000() CASCADE;
+
 CREATE MATERIALIZED VIEW top_1000 AS (
     SELECT
         rel.object AS object,
@@ -14,26 +19,36 @@ CREATE MATERIALIZED VIEW top_1000 AS (
     LEFT JOIN
         (
             SELECT
-                cyberlink.subject,
-                cyberlink.object_from AS object,
-                min(cyberlink.height) AS height,
-                min(cyberlink."timestamp") AS "timestamp"
-            FROM
-                cyberlink
-            GROUP BY
-                cyberlink.object_from,
-                cyberlink.subject
-            UNION
-            SELECT
-                cyberlink.subject,
-                cyberlink.object_to AS object,
-                min(cyberlink.height) AS height,
-                min(cyberlink."timestamp") AS "timestamp"
-            FROM
-                cyberlink
-            GROUP BY
-                cyberlink.object_to,
-                cyberlink.subject
+                subject,
+                object,
+                min(height) as height,
+                min("timestamp") as "timestamp"
+            FROM (
+                 SELECT
+                    cyberlink.subject,
+                    cyberlink.object_from AS object,
+                    min(cyberlink.height) AS height,
+                    min(cyberlink."timestamp") AS "timestamp"
+                FROM
+                    cyberlink
+                GROUP BY
+                    cyberlink.object_from,
+                    cyberlink.subject
+                UNION
+                SELECT
+                    cyberlink.subject,
+                    cyberlink.object_to AS object,
+                    min(cyberlink.height) AS height,
+                    min(cyberlink."timestamp") AS "timestamp"
+                FROM
+                    cyberlink
+                GROUP BY
+                    cyberlink.object_to,
+                    cyberlink.subject
+             ) tmp
+             GROUP BY
+                    subject,
+                    object
         ) link
     ON (
             rel.object = link.object
@@ -99,17 +114,3 @@ CREATE VIEW relevance_leaderboard AS (
     ORDER BY
         share DESC
 );
-
-CREATE OR REPLACE FUNCTION refresh_top_1000()
-RETURNS TRIGGER LANGUAGE plpgsql
-AS $$
-BEGIN
-REFRESH MATERIALIZED VIEW CONCURRENTLY top_1000;
-RETURN NULL;
-END $$;
-
-CREATE TRIGGER refresh_top_1000
-AFTER INSERT OR UPDATE OR DELETE OR TRUNCATE
-ON relevance
-FOR EACH STATEMENT
-EXECUTE PROCEDURE refresh_top_1000();

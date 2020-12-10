@@ -1,9 +1,13 @@
+DROP MATERIALIZED VIEW IF EXISTS accs_by_act CASCADE;
+DROP VIEW IF EXISTS accs_by_act CASCADE;
+
 CREATE VIEW accs_by_act AS (
     SELECT
         DISTINCT ON(subject) "transaction".subject,
         del.first_delegation,
         send.first_send,
         link.first_link,
+        first_tw.first_tweet,
         foll.first_follow,
         av.first_avatar,
         folls.follows,
@@ -61,6 +65,20 @@ CREATE VIEW accs_by_act AS (
     LEFT JOIN (
         SELECT
             subject,
+            date(min("timestamp")) as first_tweet
+        FROM
+            cyberlink
+        WHERE
+            object_from = 'QmbdH2WBamyKLPE5zu4mJ9v49qvY8BFfoumoVPMR5V4Rvx'
+        GROUP BY
+            subject
+    ) first_tw
+    ON (
+        transaction.subject = first_tw.subject
+    )
+    LEFT JOIN (
+        SELECT
+            subject,
             date(min("timestamp")) as first_follow
         FROM
             cyberlink
@@ -86,7 +104,7 @@ CREATE VIEW accs_by_act AS (
     ON (
         transaction.subject = av.subject
     )
-LEFT JOIN (
+    LEFT JOIN (
         SELECT
             subject,
             count(object_from) as follows
@@ -202,4 +220,4 @@ LEFT JOIN (
     ON (
         transaction.subject = hun_links.subject
     )
-)
+);
