@@ -4,6 +4,7 @@ import psycopg2
 from config import *
 from relevance import save_relevance
 from subscription import subscribe_block
+from datetime import datetime
 
 def get_connection():
     connection = psycopg2.connect(
@@ -25,6 +26,8 @@ def save_state(connection, cursor):
 
 if __name__ == "__main__":
     connection = get_connection()
+    if connection:
+        print(datetime.now(), 'connection to postgres OK')
     cursor = connection.cursor()
     state_saver = save_state(connection, cursor)
 

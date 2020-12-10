@@ -1,6 +1,7 @@
 import websockets
 import json
 from config import *
+from datetime import datetime
 
 async def init(websocket):
     json_init = json.dumps({
@@ -30,7 +31,7 @@ async def send_query(websocket, query):
 async def receive_data(websocket):
     response_json = {"type": None}
     while response_json["type"] != "data":
-        print("Data received...", response_json)
+        print(datetime.now(), "Data received...", response_json)
         response = await websocket.recv()
         response_json = json.loads(response)
 
@@ -60,5 +61,6 @@ async def subscribe_block(uri, save_state):
                 block = 0
             if block%10 == 0:
                 save_state(block)
+                print(datetime.now(), 'relevance saved')
             else:
                 pass
