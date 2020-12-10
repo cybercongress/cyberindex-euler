@@ -25,6 +25,7 @@ def save_state(connection, cursor):
         
 
 if __name__ == "__main__":
+    print('try to start crawling')
     connection = get_connection()
     if connection:
         print(datetime.now(), 'connection to postgres OK')
@@ -37,3 +38,4 @@ if __name__ == "__main__":
         state_saver
     )
     asyncio.get_event_loop().run_until_complete(coroutine)
+    connection.close()
