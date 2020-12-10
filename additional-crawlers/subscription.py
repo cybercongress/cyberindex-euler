@@ -59,7 +59,7 @@ async def subscribe_block(uri, save_state):
             block = data["block_aggregate"]["aggregate"]["max"]["height"]
             if not block:
                 block = 0
-            if block%100 == 0:
+            if block%10 == 0:
                 save_state(block)
                 print(datetime.now(), 'relevance saved')
             else:

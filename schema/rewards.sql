@@ -3,7 +3,7 @@ DROP VIEW IF EXISTS top_1000 CASCADE;
 DROP TRIGGER IF EXISTS refresh_top_1000 ON relevance;
 DROP FUNCTION IF EXISTS refresh_top_1000() CASCADE;
 
-CREATE MATERIALIZED VIEW top_1000 AS (
+CREATE VIEW top_1000 AS (
     SELECT
         rel.object AS object,
         rel.rank,
@@ -55,11 +55,6 @@ CREATE MATERIALIZED VIEW top_1000 AS (
         )
 );
 
-CREATE UNIQUE INDEX ON top_1000 (
-    object,
-    subject
-);
-
 CREATE VIEW top_stats AS (
     SELECT
         top_1000.object,
@@ -102,29 +97,3 @@ SELECT *,
     end as share
 FROM top_stats
 );
-
-CREATE VIEW relevance_leaderboard AS (
-    SELECT
-        subject,
-        sum(share) as share
-    FROM
-        rewards_view
-    GROUP BY
-        subject
-    ORDER BY
-        share DESC
-);
-
-CREATE OR REPLACE FUNCTION refresh_top_1000()
-RETURNS TRIGGER LANGUAGE plpgsql
-AS $$
-BEGIN
-REFRESH MATERIALIZED VIEW CONCURRENTLY top_1000;
-RETURN NULL;
-END $$;
-
-CREATE TRIGGER refresh_top_1000
-AFTER INSERT OR UPDATE OR DELETE OR TRUNCATE
-ON relevance
-FOR EACH STATEMENT
-EXECUTE PROCEDURE refresh_top_1000();
