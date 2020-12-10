@@ -3,7 +3,7 @@ DROP VIEW IF EXISTS top_1000 CASCADE;
 DROP TRIGGER IF EXISTS refresh_top_1000 ON relevance;
 DROP FUNCTION IF EXISTS refresh_top_1000() CASCADE;
 
-CREATE VIEW top_1000 AS (
+CREATE MATERIALIZED VIEW top_1000 AS (
     SELECT
         rel.object AS object,
         rel.rank,
@@ -53,6 +53,11 @@ CREATE VIEW top_1000 AS (
     ON (
             rel.object = link.object
         )
+);
+
+CREATE UNIQUE INDEX ON top_1000 (
+    object,
+    subject
 );
 
 CREATE VIEW top_stats AS (

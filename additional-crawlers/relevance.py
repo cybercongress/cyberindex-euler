@@ -21,3 +21,5 @@ def save_relevance(cursor, block):
     cids = get_block_relevance()
     print("Saving relevance at block {}".format(block))
     save_block_relevance(cursor, block, cids)
+    print("Refreshing materialized view top_1000 concurently")
+    cursor.execute("""REFRESH MATERIALIZED VIEW CONCURRENTLY top_1000""")
