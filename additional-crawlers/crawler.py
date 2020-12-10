@@ -2,7 +2,7 @@ import asyncio
 import psycopg2
 
 from config import *
-from relevance import save_relevance
+from relevance import save_relevance, update_top1000
 from subscription import subscribe_block
 from datetime import datetime
 
@@ -22,6 +22,12 @@ def save_state(connection, cursor):
         save_relevance(cursor, block)
         connection.commit()
     return f
+
+def update_views(connection, cursor):
+    def f():
+        update_top1000(cursor)
+        connection.commit()
+    return f
         
 
 if __name__ == "__main__":
@@ -31,11 +37,13 @@ if __name__ == "__main__":
         print(datetime.now(), 'connection to postgres OK')
     cursor = connection.cursor()
     state_saver = save_state(connection, cursor)
+    view_updater = update_views(connection, cursor)
 
     subscription_url = 'ws://{}/v1/graphql'.format(HASURA_URL)
     coroutine = subscribe_block(
         subscription_url, 
-        state_saver
+        state_saver,
+        view_updater
     )
     asyncio.get_event_loop().run_until_complete(coroutine)
     connection.close()
