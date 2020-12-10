@@ -1,4 +1,6 @@
-CREATE MATERIALIZED VIEW accs_by_act AS (
+DROP MATERIALIZED VIEW IF EXISTS accs_by_act CASCADE;
+
+CREATE VIEW accs_by_act AS (
     SELECT
         DISTINCT ON(subject) "transaction".subject,
         del.first_delegation,
@@ -218,21 +220,3 @@ CREATE MATERIALIZED VIEW accs_by_act AS (
         transaction.subject = hun_links.subject
     )
 );
-
-CREATE UNIQUE INDEX ON accs_by_act (
-    subject
-);
-
-CREATE OR REPLACE FUNCTION refresh_accs_by_act()
-RETURNS TRIGGER LANGUAGE plpgsql
-AS $$
-BEGIN
-REFRESH MATERIALIZED VIEW CONCURRENTLY accs_by_act;
-RETURN NULL;
-END $$;
-
-CREATE TRIGGER refresh_accs_by_act
-AFTER INSERT OR UPDATE OR DELETE OR TRUNCATE
-ON transaction
-FOR EACH STATEMENT
-EXECUTE PROCEDURE refresh_accs_by_act();

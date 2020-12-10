@@ -1,3 +1,5 @@
+DROP MATERIALIZED VIEW IF EXISTS top_1000 CASCADE;
+
 CREATE MATERIALIZED VIEW top_1000 AS (
     SELECT
         rel.object AS object,
@@ -14,26 +16,36 @@ CREATE MATERIALIZED VIEW top_1000 AS (
     LEFT JOIN
         (
             SELECT
-                cyberlink.subject,
-                cyberlink.object_from AS object,
-                min(cyberlink.height) AS height,
-                min(cyberlink."timestamp") AS "timestamp"
-            FROM
-                cyberlink
-            GROUP BY
-                cyberlink.object_from,
-                cyberlink.subject
-            UNION
-            SELECT
-                cyberlink.subject,
-                cyberlink.object_to AS object,
-                min(cyberlink.height) AS height,
-                min(cyberlink."timestamp") AS "timestamp"
-            FROM
-                cyberlink
-            GROUP BY
-                cyberlink.object_to,
-                cyberlink.subject
+                subject,
+                object,
+                min(height) as height,
+                min("timestamp") as "timestamp"
+            FROM (
+                 SELECT
+                    cyberlink.subject,
+                    cyberlink.object_from AS object,
+                    min(cyberlink.height) AS height,
+                    min(cyberlink."timestamp") AS "timestamp"
+                FROM
+                    cyberlink
+                GROUP BY
+                    cyberlink.object_from,
+                    cyberlink.subject
+                UNION
+                SELECT
+                    cyberlink.subject,
+                    cyberlink.object_to AS object,
+                    min(cyberlink.height) AS height,
+                    min(cyberlink."timestamp") AS "timestamp"
+                FROM
+                    cyberlink
+                GROUP BY
+                    cyberlink.object_to,
+                    cyberlink.subject
+             ) tmp
+             GROUP BY
+                    subject,
+                    object
         ) link
     ON (
             rel.object = link.object
