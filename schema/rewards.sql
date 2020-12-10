@@ -97,3 +97,15 @@ SELECT *,
     end as share
 FROM top_stats
 );
+
+CREATE VIEW relevance_leaderboard AS (
+    SELECT
+        subject,
+        sum(share) as share
+    FROM
+        rewards_view
+    GROUP BY
+        subject
+    ORDER BY
+        share DESC
+);
