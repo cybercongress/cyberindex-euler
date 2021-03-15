@@ -50,6 +50,12 @@ docker exec -ti cyberindex_postgres psql -c "\copy gift_info FROM /root/schema/g
 docker exec -ti cyberindex_postgres psql -f /root/schema/pre_commit_view.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
 docker exec -ti cyberindex_postgres psql -c "\copy old_pre_commits FROM /root/schema/old_pre_commits.csv with csv HEADER" -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
 docker exec -ti cyberindex_postgres psql -f /root/schema/accounts_analytics.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
+#---------
+
+docker exec -ti cyberindex_postgres psql -f /root/schema/takeoff.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
+docker exec -ti cyberindex_postgres psql -c "\copy comm_pool FROM /root/schema/comm_pool.csv with csv HEADER" -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
+docker exec -ti cyberindex_postgres psql -c "\copy takeoff FROM /root/schema/takeoff.csv with csv HEADER" -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
+docker exec -ti cyberindex_postgres psql -c "\copy takeoff_leaderboard FROM /root/schema/takeoff_leaderboard.csv with csv HEADER" -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
 # docker exec -ti cyberindex_postgres psql -f /root/schema/cohorts.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
 
 docker-compose up -d additional-crawlers
