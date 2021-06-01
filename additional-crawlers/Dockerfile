@@ -8,4 +8,4 @@ ADD config.py /
 ADD relevance.py /
 ADD subscription.py /
 
-CMD python ./crawler.py
+CMD python -u ./crawler.py --log=INFO

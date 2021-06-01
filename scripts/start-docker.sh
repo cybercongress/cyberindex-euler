@@ -37,6 +37,7 @@ docker exec -ti cyberindex_postgres psql -f /root/schema/block.sql -d $POSTGRES_
 docker exec -ti cyberindex_postgres psql -f /root/schema/transaction.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
 docker exec -ti cyberindex_postgres psql -f /root/schema/cyberlink.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
 docker exec -ti cyberindex_postgres psql -f /root/schema/relevance.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
+docker exec -ti cyberindex_postgres psql -f /root/schema/staking.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
 docker exec -ti cyberindex_postgres psql -f /root/schema/message.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
 docker exec -ti cyberindex_postgres psql -f /root/schema/object.sql -d $POSTGRES_DB_NAME -U $POSTGRES_USER_NAME
 

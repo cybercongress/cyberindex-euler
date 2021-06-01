@@ -38,7 +38,7 @@ async def receive_data(websocket):
     return response_json["payload"]["data"]
 
 
-async def subscribe_block(uri, save_state, update_views):
+async def subscribe_block(uri, save_state, update_views, save_stake):
     async with websockets.connect(uri, subprotocols=["graphql-ws"]) as websocket:
         height_query = """
             subscription {
@@ -59,9 +59,10 @@ async def subscribe_block(uri, save_state, update_views):
             block = data["block_aggregate"]["aggregate"]["max"]["height"]
             if not block:
                 block = 0
-            if block%10 == 0:
+            if block % 10 == 0:
                 save_state(block)
                 update_views()
-                print(datetime.now(), 'relevance saved')
+                save_stake(block)
+                print(datetime.now(), 'relevance and staking saved')
             else:
                 pass
